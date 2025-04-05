@@ -1,0 +1,84 @@
+# Dépendances Node.js
+node_modules/
+**/node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Environnements Python
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Dossiers de build
+dist/
+build/
+**/dist/
+**/build/
+.next/
+**/out/
+
+# Fichiers de modèles d'IA volumineux
+**/*.gguf
+**/*.bin
+**/*.pt
+**/*.onnx
+ai-service/models/
+ai-service/tokenizers/
+
+# Fichiers de données et de configuration
+*.sqlite
+*.sqlite3
+*.db
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers éditeurs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Fichiers de configuration N8N
+n8n-config/
+
+# Fichiers de logs
+logs/
+*.log
+
+# Fichiers temporaires
+*.tmp
+.cache/
+tmp/
+
+# Fichiers spécifiques à Next.js
+.next/
+/public/_next/
+
+# Fichiers spécifiques à Nest.js
+/coverage/
+/.nyc_output/
+
+# Fichiers de tests
+/coverage/
+.nyc_output/
+
+# Autres fichiers à ne pas versionner
+.vercel
+.netlify
