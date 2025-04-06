@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Style de base pour toute l'application */
+@layer base {
+  html {
+    @apply text-gray-900 antialiased;
+  }
+  
+  body {
+    @apply bg-gray-50;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+  }
+  
+  h1 {
+    @apply text-3xl;
+  }
+  
+  h2 {
+    @apply text-2xl;
+  }
+  
+  h3 {
+    @apply text-xl;
+  }
+  
+  h4 {
+    @apply text-lg;
+  }
+}
+
+/* Classes utilitaires personnalisées */
+@layer components {
+  /* Classes pour les badges de priorité */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  /* Classes pour les boutons d'action */
+  .btn-icon {
+    @apply inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors;
+  }
+  
+  /* Classes pour les éléments de navigation */
+  .nav-link {
+    @apply px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors;
+  }
+  
+  .nav-link-active {
+    @apply px-3 py-2 rounded-md text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors;
+  }
+}
+
+/* Animation de chargement */
+.loading-spinner {
+  @apply animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600;
+}
