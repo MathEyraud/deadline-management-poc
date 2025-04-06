@@ -1,98 +1,191 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend de l'Application de Gestion d'Échéances
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Backend API RESTful pour l'application de gestion d'échéances du secteur défense, développé avec Nest.js et TypeScript.
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Ce projet fournit une API backend complète pour gérer des échéances, projets, équipes et utilisateurs dans un environnement sécurisé. Conçue spécifiquement pour répondre aux besoins du secteur défense, l'application inclut des fonctionnalités de sécurité avancées et une intégration avec un service d'intelligence artificielle.
 
-## Project setup
+## Fonctionnalités principales
 
+- ✅ Gestion complète des échéances avec priorisation et statuts
+- ✅ Organisation en projets et équipes
+- ✅ Système de commentaires et pièces jointes
+- ✅ Authentification JWT sécurisée avec contrôle d'accès basé sur les rôles
+- ✅ Intégration avec un service IA pour l'assistance conversationnelle
+- ✅ Documentation API complète avec Swagger
+
+## Prérequis
+
+- Node.js (v16+)
+- npm (v7+)
+- Git
+
+## Installation
+
+1. Cloner le dépôt
 ```bash
-$ npm install
+git clone https://github.com/votre-organisation/deadline-management-backend.git
+cd deadline-management-backend
 ```
 
-## Compile and run the project
-
+2. Installer les dépendances
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+3. Créer un fichier `.env` à la racine du projet
+```
+JWT_SECRET=votre_secret_jwt_securise
+AI_SERVICE_URL=http://localhost:8000/chat
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+4. Initialiser la base de données avec des données de test (optionnel)
 ```bash
-$ npm install -g mau
-$ mau deploy
+npm run seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+5. Lancer le serveur
+```bash
+# Mode développement
+npm run start:dev
 
-## Resources
+# Mode production
+npm run build
+npm run start:prod
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Le serveur sera disponible sur http://localhost:3000
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Documentation API
 
-## Support
+Une documentation Swagger complète est disponible à l'adresse : http://localhost:3000/api
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Structure du projet
 
-## Stay in touch
+```
+backend/
+├── src/                        # Code source de l'application
+│   ├── auth/                   # Module d'authentification
+│   ├── users/                  # Module utilisateurs
+│   ├── deadlines/              # Module échéances
+│   ├── projects/               # Module projets
+│   ├── teams/                  # Module équipes
+│   ├── comments/               # Module commentaires
+│   ├── attachments/            # Module pièces jointes
+│   ├── ai-service/             # Module d'intégration avec l'IA
+│   └── common/                 # Utilitaires et services communs
+├── uploads/                    # Dossier pour stocker les fichiers
+└── data/                       # Dossier pour la base de données
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Modèle de données
 
-## License
+L'application gère les entités principales suivantes :
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- **Utilisateurs** (Users) - Gestion des identités avec rôles et permissions
+- **Échéances** (Deadlines) - Tâches avec dates limites, priorités et statuts
+- **Projets** (Projects) - Regroupement des échéances
+- **Équipes** (Teams) - Groupes d'utilisateurs travaillant ensemble
+- **Commentaires** (Comments) - Discussions sur les échéances
+- **Pièces jointes** (Attachments) - Documents associés aux échéances
+
+## Utilisation de l'API
+
+### Authentification
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "admin123"}'
+```
+
+### Création d'une échéance
+
+```bash
+curl -X POST http://localhost:3000/deadlines \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "title": "Réunion stratégique",
+    "description": "Planification du trimestre",
+    "deadlineDate": "2025-05-15T14:00:00.000Z",
+    "creatorId": "USER_ID",
+    "priority": "haute",
+    "status": "nouvelle",
+    "visibility": "équipe",
+    "projectId": "PROJECT_ID"
+  }'
+```
+
+## Intégration
+
+### Avec le frontend Next.js
+
+Le backend est configuré pour accepter les requêtes CORS depuis http://localhost:3001
+
+### Avec le service IA Python
+
+L'application peut communiquer avec un service IA Python déployé sur http://localhost:8000 pour fournir des fonctionnalités d'assistant conversationnel.
+
+### Avec N8N
+
+Connectez N8N à ce backend via les webhooks pour automatiser les workflows comme les rappels d'échéances.
+
+## Sécurité
+
+- Authentification JWT avec expiration des tokens
+- Hachage des mots de passe avec bcrypt
+- Validation des entrées contre les injections
+- Contrôle d'accès basé sur les rôles
+
+## Tests
+
+```bash
+# Tests unitaires
+npm run test
+
+# Tests e2e
+npm run test:e2e
+
+# Couverture de tests
+npm run test:cov
+```
+
+## Développement
+
+```bash
+# Générer un nouveau module
+nest generate module nom-module
+
+# Générer un nouveau contrôleur
+nest generate controller nom-controleur
+
+# Générer un nouveau service
+nest generate service nom-service
+```
+
+## Déploiement
+
+Pour un déploiement en production, il est recommandé de :
+
+1. Utiliser une base de données robuste (PostgreSQL, MySQL)
+2. Configurer un proxy inverse sécurisé (Nginx, Apache)
+3. Utiliser PM2 ou un service similaire pour la gestion des processus
+4. Mettre en place un monitoring (logs, performances)
+
+## Équipe de développement
+
+Ce projet a été développé dans le cadre d'un POC pour une application de gestion d'échéances du secteur défense.
+
+## Licence
+
+[Spécifier la licence]
+
+## Contact
+
+Pour toute question concernant ce projet, contactez [votre-contact@exemple.com].
+
+---
+
+Développé avec [Nest](https://github.com/nestjs/nest).

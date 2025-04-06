@@ -1,0 +1,2421 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/users": {
+      "post": {
+        "operationId": "UsersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email déjà utilisé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Créer un nouvel utilisateur",
+        "tags": [
+          "users"
+        ]
+      },
+      "get": {
+        "operationId": "UsersController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Liste des utilisateurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer tous les utilisateurs",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "UsersController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Utilisateur trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer un utilisateur par son ID",
+        "tags": [
+          "users"
+        ]
+      },
+      "patch": {
+        "operationId": "UsersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Utilisateur mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mettre à jour un utilisateur",
+        "tags": [
+          "users"
+        ]
+      },
+      "delete": {
+        "operationId": "UsersController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Utilisateur supprimé"
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Supprimer un utilisateur",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Identifiants invalides"
+          }
+        },
+        "summary": "Connexion utilisateur",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé avec succès"
+          },
+          "400": {
+            "description": "Données invalides ou email déjà utilisé"
+          }
+        },
+        "summary": "Enregistrement d'un nouvel utilisateur",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/deadlines": {
+      "post": {
+        "operationId": "DeadlinesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeadlineDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Échéance créée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deadline"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Créer une nouvelle échéance",
+        "tags": [
+          "deadlines"
+        ]
+      },
+      "get": {
+        "operationId": "DeadlinesController_findAll",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "nouvelle",
+                "en cours",
+                "en attente",
+                "complétée",
+                "annulée"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "priority",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "critique",
+                "haute",
+                "moyenne",
+                "basse"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "privée",
+                "équipe",
+                "département",
+                "organisation"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "creatorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des échéances",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Deadline"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer toutes les échéances",
+        "tags": [
+          "deadlines"
+        ]
+      }
+    },
+    "/deadlines/{id}": {
+      "get": {
+        "operationId": "DeadlinesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'échéance",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Échéance trouvée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deadline"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Échéance non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer une échéance par son ID",
+        "tags": [
+          "deadlines"
+        ]
+      },
+      "patch": {
+        "operationId": "DeadlinesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'échéance",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDeadlineDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Échéance mise à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deadline"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Échéance non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mettre à jour une échéance",
+        "tags": [
+          "deadlines"
+        ]
+      },
+      "delete": {
+        "operationId": "DeadlinesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'échéance",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Échéance supprimée"
+          },
+          "404": {
+            "description": "Échéance non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Supprimer une échéance",
+        "tags": [
+          "deadlines"
+        ]
+      }
+    },
+    "/deadlines/project/{projectId}": {
+      "get": {
+        "operationId": "DeadlinesController_findByProject",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "description": "ID du projet",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des échéances par projet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Deadline"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer les échéances par projet",
+        "tags": [
+          "deadlines"
+        ]
+      }
+    },
+    "/deadlines/user/{userId}": {
+      "get": {
+        "operationId": "DeadlinesController_findByUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'utilisateur",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des échéances par utilisateur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Deadline"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer les échéances par utilisateur",
+        "tags": [
+          "deadlines"
+        ]
+      }
+    },
+    "/projects": {
+      "post": {
+        "operationId": "ProjectsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Projet créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Créer un nouveau projet",
+        "tags": [
+          "projects"
+        ]
+      },
+      "get": {
+        "operationId": "ProjectsController_findAll",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "planification",
+                "actif",
+                "en pause",
+                "terminé",
+                "annulé"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "managerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "teamId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des projets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Project"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer tous les projets",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/projects/{id}": {
+      "get": {
+        "operationId": "ProjectsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID du projet",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projet trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Projet non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer un projet par son ID",
+        "tags": [
+          "projects"
+        ]
+      },
+      "patch": {
+        "operationId": "ProjectsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID du projet",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Projet mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Projet non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mettre à jour un projet",
+        "tags": [
+          "projects"
+        ]
+      },
+      "delete": {
+        "operationId": "ProjectsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID du projet",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projet supprimé"
+          },
+          "404": {
+            "description": "Projet non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Supprimer un projet",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/projects/manager/{managerId}": {
+      "get": {
+        "operationId": "ProjectsController_findByManager",
+        "parameters": [
+          {
+            "name": "managerId",
+            "required": true,
+            "in": "path",
+            "description": "ID du gestionnaire",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des projets du gestionnaire",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Project"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer les projets par gestionnaire",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/projects/team/{teamId}": {
+      "get": {
+        "operationId": "ProjectsController_findByTeam",
+        "parameters": [
+          {
+            "name": "teamId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'équipe",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des projets de l'équipe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Project"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer les projets par équipe",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/teams": {
+      "post": {
+        "operationId": "TeamsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTeamDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Équipe créée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Créer une nouvelle équipe",
+        "tags": [
+          "teams"
+        ]
+      },
+      "get": {
+        "operationId": "TeamsController_findAll",
+        "parameters": [
+          {
+            "name": "leaderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des équipes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Team"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer toutes les équipes",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/teams/{id}": {
+      "get": {
+        "operationId": "TeamsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'équipe",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Équipe trouvée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Équipe non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer une équipe par son ID",
+        "tags": [
+          "teams"
+        ]
+      },
+      "patch": {
+        "operationId": "TeamsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'équipe",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTeamDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Équipe mise à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Équipe non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mettre à jour une équipe",
+        "tags": [
+          "teams"
+        ]
+      },
+      "delete": {
+        "operationId": "TeamsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'équipe",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Équipe supprimée"
+          },
+          "404": {
+            "description": "Équipe non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Supprimer une équipe",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/teams/{teamId}/members/{userId}": {
+      "post": {
+        "operationId": "TeamsController_addMember",
+        "parameters": [
+          {
+            "name": "teamId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'équipe",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'utilisateur à ajouter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Membre ajouté avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Équipe ou utilisateur non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ajouter un membre à une équipe",
+        "tags": [
+          "teams"
+        ]
+      },
+      "delete": {
+        "operationId": "TeamsController_removeMember",
+        "parameters": [
+          {
+            "name": "teamId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'équipe",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'utilisateur à retirer",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Membre retiré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Équipe non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retirer un membre d'une équipe",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/comments": {
+      "post": {
+        "operationId": "CommentsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Commentaire créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Échéance non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Créer un nouveau commentaire",
+        "tags": [
+          "comments"
+        ]
+      },
+      "get": {
+        "operationId": "CommentsController_findAll",
+        "parameters": [
+          {
+            "name": "authorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deadlineId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "privé",
+                "public"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des commentaires",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer tous les commentaires",
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/comments/{id}": {
+      "get": {
+        "operationId": "CommentsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID du commentaire",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commentaire trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Commentaire non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer un commentaire par son ID",
+        "tags": [
+          "comments"
+        ]
+      },
+      "patch": {
+        "operationId": "CommentsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID du commentaire",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Commentaire mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "404": {
+            "description": "Commentaire non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mettre à jour un commentaire",
+        "tags": [
+          "comments"
+        ]
+      },
+      "delete": {
+        "operationId": "CommentsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID du commentaire",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commentaire supprimé"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "404": {
+            "description": "Commentaire non trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Supprimer un commentaire",
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/comments/deadline/{deadlineId}": {
+      "get": {
+        "operationId": "CommentsController_findByDeadline",
+        "parameters": [
+          {
+            "name": "deadlineId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'échéance",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des commentaires de l'échéance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer les commentaires par échéance",
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/comments/author/{authorId}": {
+      "get": {
+        "operationId": "CommentsController_findByAuthor",
+        "parameters": [
+          {
+            "name": "authorId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'auteur",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des commentaires de l'auteur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer les commentaires par auteur",
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/attachments/upload": {
+      "post": {
+        "operationId": "AttachmentsController_uploadFile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "deadlineId": {
+                    "type": "string"
+                  },
+                  "classification": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pièce jointe créée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Échéance non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Uploader une nouvelle pièce jointe",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/attachments": {
+      "get": {
+        "operationId": "AttachmentsController_findAll",
+        "parameters": [
+          {
+            "name": "deadlineId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "uploaderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "classification",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des pièces jointes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Attachment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer toutes les pièces jointes",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/attachments/{id}": {
+      "get": {
+        "operationId": "AttachmentsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la pièce jointe",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pièce jointe trouvée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pièce jointe non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer une pièce jointe par son ID",
+        "tags": [
+          "attachments"
+        ]
+      },
+      "patch": {
+        "operationId": "AttachmentsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la pièce jointe",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pièce jointe mise à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "404": {
+            "description": "Pièce jointe non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mettre à jour une pièce jointe",
+        "tags": [
+          "attachments"
+        ]
+      },
+      "delete": {
+        "operationId": "AttachmentsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la pièce jointe",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pièce jointe supprimée"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "404": {
+            "description": "Pièce jointe non trouvée"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Supprimer une pièce jointe",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/attachments/deadline/{deadlineId}": {
+      "get": {
+        "operationId": "AttachmentsController_findByDeadline",
+        "parameters": [
+          {
+            "name": "deadlineId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'échéance",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des pièces jointes de l'échéance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Attachment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer les pièces jointes par échéance",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/attachments/uploader/{uploaderId}": {
+      "get": {
+        "operationId": "AttachmentsController_findByUploader",
+        "parameters": [
+          {
+            "name": "uploaderId",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'uploader",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des pièces jointes de l'uploader",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Attachment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Récupérer les pièces jointes par uploader",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/ai/query": {
+      "post": {
+        "operationId": "AiServiceController_query",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiQueryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Réponse du modèle IA"
+          },
+          "503": {
+            "description": "Service IA indisponible"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Envoyer une requête au service IA",
+        "tags": [
+          "ai-service"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "API de Gestion d'Échéances",
+    "description": "API pour l'application de gestion d'échéances du secteur défense",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "Prénom",
+            "example": "Jean"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Nom",
+            "example": "Dupont"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email",
+            "example": "jean.dupont@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "Mot de passe",
+            "example": "P@ssw0rd123"
+          },
+          "role": {
+            "type": "string",
+            "description": "Rôle de l'utilisateur",
+            "enum": [
+              "admin",
+              "manager",
+              "user"
+            ],
+            "default": "user"
+          },
+          "department": {
+            "type": "string",
+            "description": "Département",
+            "example": "Ingénierie"
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "password"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "Prénom",
+            "example": "Jean"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Nom",
+            "example": "Dupont"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email",
+            "example": "jean.dupont@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "Mot de passe",
+            "example": "P@ssw0rd123"
+          },
+          "role": {
+            "type": "string",
+            "description": "Rôle de l'utilisateur",
+            "enum": [
+              "admin",
+              "manager",
+              "user"
+            ],
+            "default": "user"
+          },
+          "department": {
+            "type": "string",
+            "description": "Département",
+            "example": "Ingénierie"
+          }
+        }
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AuthResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateDeadlineDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Titre de l'échéance",
+            "example": "Réunion de projet"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description détaillée",
+            "example": "Discuter des avancées du projet XYZ"
+          },
+          "deadlineDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date et heure de l'échéance",
+            "example": "2025-05-15T14:00:00.000Z"
+          },
+          "creatorId": {
+            "type": "string",
+            "description": "ID de l'utilisateur créateur",
+            "example": "5f8d0f55-e477-4915-b522-c21ba1f70d9e"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Priorité de l'échéance",
+            "enum": [
+              "critique",
+              "haute",
+              "moyenne",
+              "basse"
+            ],
+            "example": "moyenne"
+          },
+          "status": {
+            "type": "string",
+            "description": "Statut de l'échéance",
+            "enum": [
+              "nouvelle",
+              "en cours",
+              "en attente",
+              "complétée",
+              "annulée"
+            ],
+            "example": "nouvelle"
+          },
+          "visibility": {
+            "type": "string",
+            "description": "Visibilité de l'échéance",
+            "enum": [
+              "privée",
+              "équipe",
+              "département",
+              "organisation"
+            ],
+            "example": "équipe"
+          },
+          "projectId": {
+            "type": "string",
+            "description": "ID du projet associé (optionnel)",
+            "example": "7a9d0f35-d562-4219-c732-d35cf1a2e5f9"
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "deadlineDate",
+          "creatorId",
+          "priority",
+          "status",
+          "visibility"
+        ]
+      },
+      "Deadline": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateDeadlineDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Titre de l'échéance",
+            "example": "Réunion de projet"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description détaillée",
+            "example": "Discuter des avancées du projet XYZ"
+          },
+          "deadlineDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date et heure de l'échéance",
+            "example": "2025-05-15T14:00:00.000Z"
+          },
+          "creatorId": {
+            "type": "string",
+            "description": "ID de l'utilisateur créateur",
+            "example": "5f8d0f55-e477-4915-b522-c21ba1f70d9e"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Priorité de l'échéance",
+            "enum": [
+              "critique",
+              "haute",
+              "moyenne",
+              "basse"
+            ],
+            "example": "moyenne"
+          },
+          "status": {
+            "type": "string",
+            "description": "Statut de l'échéance",
+            "enum": [
+              "nouvelle",
+              "en cours",
+              "en attente",
+              "complétée",
+              "annulée"
+            ],
+            "example": "nouvelle"
+          },
+          "visibility": {
+            "type": "string",
+            "description": "Visibilité de l'échéance",
+            "enum": [
+              "privée",
+              "équipe",
+              "département",
+              "organisation"
+            ],
+            "example": "équipe"
+          },
+          "projectId": {
+            "type": "string",
+            "description": "ID du projet associé (optionnel)",
+            "example": "7a9d0f35-d562-4219-c732-d35cf1a2e5f9"
+          }
+        }
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nom du projet",
+            "example": "Projet Alpha"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description détaillée du projet",
+            "example": "Développement d'un système de communication sécurisé"
+          },
+          "startDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date de début du projet",
+            "example": "2025-01-01"
+          },
+          "endDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date de fin prévue du projet",
+            "example": "2025-06-30"
+          },
+          "managerId": {
+            "type": "string",
+            "description": "ID de l'utilisateur responsable",
+            "example": "5f8d0f55-e477-4915-b522-c21ba1f70d9e"
+          },
+          "status": {
+            "type": "string",
+            "description": "Statut du projet",
+            "enum": [
+              "planification",
+              "actif",
+              "en pause",
+              "terminé",
+              "annulé"
+            ],
+            "example": "planification"
+          },
+          "securityLevel": {
+            "type": "string",
+            "description": "Niveau de sécurité ou classification",
+            "example": "Confidentiel"
+          },
+          "teamId": {
+            "type": "string",
+            "description": "ID de l'équipe associée (optionnel)",
+            "example": "7a9d0f35-d562-4219-c732-d35cf1a2e5f9"
+          }
+        },
+        "required": [
+          "name",
+          "startDate",
+          "managerId",
+          "status"
+        ]
+      },
+      "Project": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nom du projet",
+            "example": "Projet Alpha"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description détaillée du projet",
+            "example": "Développement d'un système de communication sécurisé"
+          },
+          "startDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date de début du projet",
+            "example": "2025-01-01"
+          },
+          "endDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date de fin prévue du projet",
+            "example": "2025-06-30"
+          },
+          "managerId": {
+            "type": "string",
+            "description": "ID de l'utilisateur responsable",
+            "example": "5f8d0f55-e477-4915-b522-c21ba1f70d9e"
+          },
+          "status": {
+            "type": "string",
+            "description": "Statut du projet",
+            "enum": [
+              "planification",
+              "actif",
+              "en pause",
+              "terminé",
+              "annulé"
+            ],
+            "example": "planification"
+          },
+          "securityLevel": {
+            "type": "string",
+            "description": "Niveau de sécurité ou classification",
+            "example": "Confidentiel"
+          },
+          "teamId": {
+            "type": "string",
+            "description": "ID de l'équipe associée (optionnel)",
+            "example": "7a9d0f35-d562-4219-c732-d35cf1a2e5f9"
+          }
+        }
+      },
+      "CreateTeamDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nom de l'équipe",
+            "example": "Équipe Cybersécurité"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description détaillée de l'équipe",
+            "example": "Équipe responsable de la sécurité des systèmes d'information"
+          },
+          "leaderId": {
+            "type": "string",
+            "description": "ID de l'utilisateur chef d'équipe",
+            "example": "5f8d0f55-e477-4915-b522-c21ba1f70d9e"
+          },
+          "memberIds": {
+            "description": "Liste des IDs des membres de l'équipe",
+            "example": [
+              "7a9d0f35-d562-4219-c732-d35cf1a2e5f9",
+              "3e7d0f55-e987-4215-c382-a56cf1a2e4d8"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "department": {
+            "type": "string",
+            "description": "Département auquel l'équipe appartient",
+            "example": "R&D"
+          }
+        },
+        "required": [
+          "name",
+          "leaderId",
+          "memberIds"
+        ]
+      },
+      "Team": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateTeamDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nom de l'équipe",
+            "example": "Équipe Cybersécurité"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description détaillée de l'équipe",
+            "example": "Équipe responsable de la sécurité des systèmes d'information"
+          },
+          "leaderId": {
+            "type": "string",
+            "description": "ID de l'utilisateur chef d'équipe",
+            "example": "5f8d0f55-e477-4915-b522-c21ba1f70d9e"
+          },
+          "memberIds": {
+            "description": "Liste des IDs des membres de l'équipe",
+            "example": [
+              "7a9d0f35-d562-4219-c732-d35cf1a2e5f9",
+              "3e7d0f55-e987-4215-c382-a56cf1a2e4d8"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "department": {
+            "type": "string",
+            "description": "Département auquel l'équipe appartient",
+            "example": "R&D"
+          }
+        }
+      },
+      "CreateCommentDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Contenu du commentaire",
+            "example": "Nous devons avancer sur cette tâche rapidement."
+          },
+          "authorId": {
+            "type": "string",
+            "description": "ID de l'utilisateur auteur du commentaire",
+            "example": "5f8d0f55-e477-4915-b522-c21ba1f70d9e"
+          },
+          "deadlineId": {
+            "type": "string",
+            "description": "ID de l'échéance associée au commentaire",
+            "example": "7a9d0f35-d562-4219-c732-d35cf1a2e5f9"
+          },
+          "visibility": {
+            "type": "string",
+            "description": "Visibilité du commentaire",
+            "enum": [
+              "privé",
+              "public"
+            ],
+            "example": "public"
+          }
+        },
+        "required": [
+          "content",
+          "authorId",
+          "deadlineId",
+          "visibility"
+        ]
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateCommentDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Contenu du commentaire",
+            "example": "Nous devons avancer sur cette tâche rapidement."
+          },
+          "authorId": {
+            "type": "string",
+            "description": "ID de l'utilisateur auteur du commentaire",
+            "example": "5f8d0f55-e477-4915-b522-c21ba1f70d9e"
+          },
+          "deadlineId": {
+            "type": "string",
+            "description": "ID de l'échéance associée au commentaire",
+            "example": "7a9d0f35-d562-4219-c732-d35cf1a2e5f9"
+          },
+          "visibility": {
+            "type": "string",
+            "description": "Visibilité du commentaire",
+            "enum": [
+              "privé",
+              "public"
+            ],
+            "example": "public"
+          }
+        }
+      },
+      "Attachment": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Nom du fichier",
+            "example": "rapport_mensuel.pdf"
+          },
+          "mimeType": {
+            "type": "string",
+            "description": "Type MIME du fichier",
+            "example": "application/pdf"
+          },
+          "size": {
+            "type": "number",
+            "description": "Taille du fichier en octets",
+            "example": 1048576
+          },
+          "path": {
+            "type": "string",
+            "description": "Chemin de stockage du fichier",
+            "example": "uploads/2025/04/rapport_mensuel_123456.pdf"
+          },
+          "deadlineId": {
+            "type": "string",
+            "description": "ID de l'échéance associée",
+            "example": "7a9d0f35-d562-4219-c732-d35cf1a2e5f9"
+          },
+          "uploaderId": {
+            "type": "string",
+            "description": "ID de l'utilisateur ayant ajouté la pièce jointe",
+            "example": "5f8d0f55-e477-4915-b522-c21ba1f70d9e"
+          },
+          "classification": {
+            "type": "string",
+            "description": "Niveau de classification du document",
+            "example": "Confidentiel"
+          }
+        }
+      },
+      "AiQueryDto": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "La question ou l'instruction de l'utilisateur",
+            "example": "Quelles sont mes échéances à venir cette semaine ?"
+          },
+          "context": {
+            "type": "array",
+            "description": "Contexte optionnel (historique de conversation, etc.)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "example": "user"
+                },
+                "content": {
+                  "type": "string",
+                  "example": "Quelles sont mes projets actifs ?"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    }
+  }
+}
