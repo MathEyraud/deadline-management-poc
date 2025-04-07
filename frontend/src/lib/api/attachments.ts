@@ -1,76 +1,117 @@
-import api, { handleApiError } from './client';
-import { Attachment, UploadResponse } from '@/types';
+/**
+ * Service d'API pour les pièces jointes
+ * Gère les opérations CRUD sur les pièces jointes
+ * @module api/attachments
+ */
+import api from './client';
+import handleApiError from './errorHandler';
+import { Attachment, AttachmentFilters, UploadResponse } from '../../types';
 
 /**
- * Service pour gérer les opérations sur les pièces jointes
+ * Récupère toutes les pièces jointes avec filtres optionnels
+ * @param filters - Filtres à appliquer à la requête
+ * @returns Liste des pièces jointes correspondant aux filtres
  */
-export const attachmentsService = {
-  /**
-   * Récupérer les pièces jointes d'une échéance
-   * @param {string} deadlineId - ID de l'échéance
-   * @returns {Promise<Attachment[]>} Liste des pièces jointes
-   */
-  getByDeadline: async (deadlineId: string): Promise<Attachment[]> => {
-    try {
-      const response = await api.get<Attachment[]>(`/attachments/deadline/${deadlineId}`);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Charger une nouvelle pièce jointe
-   * @param {File} file - Fichier à charger
-   * @param {string} deadlineId - ID de l'échéance associée
-   * @param {string} classification - Classification optionnelle
-   * @returns {Promise<UploadResponse>} Informations sur la pièce jointe créée
-   */
-  upload: async (file: File, deadlineId: string, classification?: string): Promise<UploadResponse> => {
-    try {
-      // Vérifier la taille du fichier (max 50 Mo)
-      const maxSize = 50 * 1024 * 1024; // 50 Mo en octets
-      if (file.size > maxSize) {
-        throw new Error(`La taille du fichier (${(file.size / (1024 * 1024)).toFixed(2)} Mo) dépasse la limite de 50 Mo.`);
-      }
-      
-      // Créer un FormData pour l'upload multipart
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('deadlineId', deadlineId);
-      
-      if (classification) {
-        formData.append('classification', classification);
-      }
-      
-      // Configurer les en-têtes spécifiques pour l'upload de fichier
-      const response = await api.post<UploadResponse>('/attachments/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+export const getAttachments = async (filters?: AttachmentFilters): Promise<Attachment[]> => {
+  try {
+    // Construction des paramètres de requête
+    const params = new URLSearchParams();
+    
+    if (filters) {
+      // Ajout de chaque filtre défini aux paramètres de requête
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
         }
       });
-      
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      throw error;
     }
-  },
-  
-  /**
-   * Supprimer une pièce jointe
-   * @param {string} id - ID de la pièce jointe à supprimer
-   * @returns {Promise<void>}
-   */
-  delete: async (id: string): Promise<void> => {
-    try {
-      await api.delete(`/attachments/${id}`);
-    } catch (error) {
-      handleApiError(error);
-      throw error;
-    }
+    
+    const response = await api.get<Attachment[]>(`/attachments?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
   }
 };
 
-export default attachmentsService;
+/**
+ * Récupère une pièce jointe par son ID
+ * @param id - ID de la pièce jointe à récupérer
+ * @returns Détails de la pièce jointe demandée
+ */
+export const getAttachmentById = async (id: string): Promise<Attachment> => {
+  try {
+    const response = await api.get<Attachment>(`/attachments/${id}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Récupère les pièces jointes d'une échéance
+ * @param deadlineId - ID de l'échéance
+ * @returns Liste des pièces jointes de l'échéance
+ */
+export const getAttachmentsByDeadline = async (deadlineId: string): Promise<Attachment[]> => {
+  try {
+    const response = await api.get<Attachment[]>(`/attachments/deadline/${deadlineId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Télécharge une pièce jointe
+ * @param file - Fichier à télécharger
+ * @param deadlineId - ID de l'échéance associée
+ * @param classification - Classification du document (optionnelle)
+ * @returns Informations sur la pièce jointe créée
+ */
+export const uploadAttachment = async (
+  file: File,
+  deadlineId: string,
+  classification?: string
+): Promise<UploadResponse> => {
+  try {
+    // Création d'un objet FormData pour l'upload multipart
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('deadlineId', deadlineId);
+    
+    if (classification) {
+      formData.append('classification', classification);
+    }
+    
+    const response = await api.post<UploadResponse>('/attachments/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Supprime une pièce jointe
+ * @param id - ID de la pièce jointe à supprimer
+ * @returns void
+ */
+export const deleteAttachment = async (id: string): Promise<void> => {
+  try {
+    await api.delete(`/attachments/${id}`);
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export default {
+  getAttachments,
+  getAttachmentById,
+  getAttachmentsByDeadline,
+  uploadAttachment,
+  deleteAttachment,
+};

@@ -1,100 +1,150 @@
-'use client';
-
+/**
+ * Composant DeadlineOverview
+ * Vue d'ensemble des échéances pour le tableau de bord
+ * @module components/dashboard/DeadlineOverview
+ */
 import React from 'react';
+import { Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { useDeadlines } from '@/hooks/useDeadlines';
-import { Button } from '@/components/ui/Button';
-import { Deadline, DeadlinePriority, DeadlineStatus } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { useDeadlinesList } from '@/hooks/useDeadlines';
+import { formatDate, truncateText } from '@/lib/utils';
+import { DeadlinePriority, DeadlineStatus } from '@/types';
 
+/**
+ * Props pour le composant DeadlineOverview
+ */
 interface DeadlineOverviewProps {
+  /** Limite du nombre d'échéances à afficher */
   limit?: number;
 }
 
 /**
- * Composant affichant un aperçu des échéances imminentes
- * @param {Object} props - Propriétés du composant
- * @param {number} props.limit - Nombre maximum d'échéances à afficher
- * @returns {JSX.Element} Aperçu des échéances imminentes
+ * Obtient la couleur de badge en fonction de la priorité
+ * @param priority - Priorité de l'échéance
+ * @returns Variante de badge correspondante
  */
-export const DeadlineOverview: React.FC<DeadlineOverviewProps> = ({ limit = 5 }) => {
-  const { data: deadlines, isLoading } = useDeadlines({
-    limit,
-    sort: 'deadlineDate',
-    order: 'asc',
-    status: [DeadlineStatus.NEW, DeadlineStatus.IN_PROGRESS, DeadlineStatus.PENDING] // Filtrer pour n'afficher que les échéances non terminées
+const getPriorityBadgeVariant = (priority: string) => {
+  switch (priority) {
+    case DeadlinePriority.CRITICAL:
+      return 'danger';
+    case DeadlinePriority.HIGH:
+      return 'warning';
+    case DeadlinePriority.MEDIUM:
+      return 'primary';
+    case DeadlinePriority.LOW:
+      return 'secondary';
+    default:
+      return 'default';
+  }
+};
+
+/**
+ * Composant DeadlineOverview - Vue d'ensemble des échéances à venir
+ * @param props - Propriétés du composant
+ * @returns Composant DeadlineOverview
+ */
+export const DeadlineOverview = ({ limit = 5 }: DeadlineOverviewProps) => {
+  // Récupérer les échéances non terminées, triées par date
+  const { data: allDeadlines = [], isLoading } = useDeadlinesList({
+    status: [DeadlineStatus.NEW, DeadlineStatus.IN_PROGRESS, DeadlineStatus.PENDING].join(','),
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(limit)].map((_, index) => (
-          <div key={index} className="p-4 border rounded-lg shadow-sm animate-pulse">
-            <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
-            <div className="flex justify-between">
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  // Trier par date croissante et limiter
+  const deadlines = [...allDeadlines]
+    .sort((a, b) => new Date(a.deadlineDate).getTime() - new Date(b.deadlineDate).getTime())
+    .slice(0, limit);
 
-  if (!deadlines || deadlines.length === 0) {
-    return (
-      <div className="text-center py-8 border rounded-lg bg-gray-50">
-        <p className="text-gray-500 mb-4">Aucune échéance imminente</p>
-        <Link href="/deadlines/create">
-          <Button>Créer une échéance</Button>
-        </Link>
-      </div>
-    );
-  }
+  // Déterminer si une échéance est urgente (moins de 24h)
+  const isUrgent = (date: string | Date) => {
+    const deadlineTime = new Date(date).getTime();
+    const nowTime = new Date().getTime();
+    const oneDayMillis = 24 * 60 * 60 * 1000;
+    
+    return deadlineTime - nowTime < oneDayMillis;
+  };
+
+  // Calculer le nombre d'échéances en retard
+  const overdueCount = allDeadlines.filter(
+    deadline => new Date(deadline.deadlineDate) < new Date()
+  ).length;
 
   return (
-    <div className="space-y-3">
-      {deadlines.map((deadline: Deadline) => (
-        <Link href={`/deadlines/${deadline.id}`} key={deadline.id} className="block">
-          <div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-medium text-gray-900">{deadline.title}</h3>
-                <p className="text-sm text-gray-500 mt-1 line-clamp-1">
-                  {deadline.description || 'Aucune description'}
-                </p>
-              </div>
-              <div className={`px-2 py-1 text-xs rounded-full 
-                ${deadline.priority === DeadlinePriority.HIGH || deadline.priority === 'haute' ? 'bg-red-100 text-red-800' : 
-                  deadline.priority === DeadlinePriority.MEDIUM || deadline.priority === 'moyenne' ? 'bg-yellow-100 text-yellow-800' : 
-                  'bg-green-100 text-green-800'}`}>
-                {deadline.priority}
-              </div>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle>Échéances à venir</CardTitle>
+          {overdueCount > 0 && (
+            <div className="flex items-center text-red-500 text-sm">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              <span>{overdueCount} en retard</span>
             </div>
-            <div className="flex justify-between items-center mt-3 text-sm">
-              <span className="text-gray-600">
-                {format(new Date(deadline.deadlineDate), 'dd MMM yyyy', { locale: fr })}
-              </span>
-              <span className={`px-2 py-1 rounded-full text-xs
-                ${deadline.status === DeadlineStatus.NEW || deadline.status === 'nouvelle' ? 'bg-blue-100 text-blue-800' : 
-                  deadline.status === DeadlineStatus.IN_PROGRESS || deadline.status === 'en cours' ? 'bg-purple-100 text-purple-800' :
-                  deadline.status === DeadlineStatus.PENDING || deadline.status === 'en attente' ? 'bg-orange-100 text-orange-800' :
-                  deadline.status === DeadlineStatus.COMPLETED || deadline.status === 'complétée' ? 'bg-green-100 text-green-800' :
-                  'bg-gray-100 text-gray-800'}`}>
-                {deadline.status}
-              </span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="py-6 flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : deadlines.length === 0 ? (
+          <div className="text-center py-6 text-slate-500">
+            <p>Aucune échéance à venir</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {deadlines.map((deadline) => (
+              <Link
+                key={deadline.id}
+                href={`/deadlines/${deadline.id}`}
+                className="block"
+              >
+                <div className="p-3 border border-slate-200 rounded hover:bg-slate-50 transition">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-slate-900">{deadline.title}</h3>
+                    <Badge variant={getPriorityBadgeVariant(deadline.priority)}>
+                      {deadline.priority}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center mt-2 text-sm text-slate-500">
+                    <Clock className="h-3.5 w-3.5 mr-1" />
+                    <span className={isUrgent(deadline.deadlineDate) ? "text-red-500 font-medium" : ""}>
+                      {formatDate(deadline.deadlineDate)}
+                    </span>
+                  </div>
+                  
+                  {deadline.description && (
+                    <p className="mt-2 text-sm text-slate-700">
+                      {truncateText(deadline.description, 100)}
+                    </p>
+                  )}
+                  
+                  {deadline.project && (
+                    <div className="mt-2">
+                      <Badge variant="outline" className="text-xs">
+                        {deadline.project.name}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
+            
+            <div className="pt-2">
+              <Link href="/deadlines">
+                <Button variant="link" className="w-full">
+                  Voir toutes les échéances
+                </Button>
+              </Link>
             </div>
           </div>
-        </Link>
-      ))}
-      
-      <div className="text-center pt-2">
-        <Link href="/deadlines">
-          <Button variant="outline">Voir toutes les échéances</Button>
-        </Link>
-      </div>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
+
+export default DeadlineOverview;

@@ -1,23 +1,29 @@
+/**
+ * Page de chat avec l'agent IA
+ * Affiche l'interface de conversation avec l'IA
+ * @module app/chat/page
+ */
 'use client';
 
+import React from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { ChatInterface } from '@/components/chat/ChatInterface';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import ChatInterface from '@/components/chat/ChatInterface';
 
 /**
- * Page d'interface de chat avec l'agent IA
- * @returns {JSX.Element} Page interface de chat IA
+ * Page Chat
+ * Interface de conversation avec l'assistant IA
+ * @returns Page Chat
  */
 export default function ChatPage() {
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Assistant IA" 
-        description="Posez vos questions et recevez de l'aide sur vos échéances" 
+    <DashboardLayout>
+      <PageHeader
+        title="Chat IA"
+        description="Posez des questions et obtenez de l'aide concernant vos échéances"
       />
       
-      <div className="bg-white rounded-lg shadow h-[calc(100vh-220px)] flex flex-col">
-        <ChatInterface />
-      </div>
-    </div>
+      <ChatInterface className="h-[calc(100vh-13rem)]" />
+    </DashboardLayout>
   );
 }

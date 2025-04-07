@@ -10,6 +10,7 @@ export * from './user';
 export * from './team';
 export * from './comment';
 export * from './attachment';
+export * from './ai';
 
 // Exemple d'utilisation:
 // import { Deadline, DeadlineStatus, User, Project } from '@/types';

@@ -1,27 +1,77 @@
-'use client';
-
-import React, { ReactNode } from 'react';
+/**
+ * Composant DashboardLayout
+ * Layout principal de l'application, intégrant navbar et sidebar
+ * @module components/layout/DashboardLayout
+ */
+import React, { ReactNode, useState, useEffect } from 'react';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
-import { Footer } from './Footer';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
- * Layout principal pour les pages du tableau de bord et autres pages après connexion
- * @param {Object} props - Propriétés du composant
- * @param {ReactNode} props.children - Contenu à afficher dans le layout
- * @returns {JSX.Element} Layout avec barre de navigation, sidebar et footer
+ * Props pour le composant DashboardLayout
  */
-export const DashboardLayout = ({ children }: { children: ReactNode }) => {
+interface DashboardLayoutProps {
+  /** Contenu à afficher dans le layout */
+  children: ReactNode;
+}
+
+/**
+ * Composant DashboardLayout - Structure principale de l'application
+ * Inclut la barre de navigation, le sidebar et le contenu principal
+ * @param props - Propriétés du composant
+ * @returns Composant DashboardLayout
+ */
+export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
+
+  // Redirection si non authentifié
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isAuthenticated, loading, router]);
+
+  // Ne rien afficher pendant le chargement
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Ne rien afficher si non authentifié (la redirection se fera)
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 overflow-auto">
+    <div className="flex min-h-screen bg-slate-50">
+      {/* Sidebar */}
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+      />
+      
+      {/* Contenu principal */}
+      <div className="flex flex-col flex-1">
+        {/* Navbar */}
+        <Navbar 
+          toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
+          isSidebarOpen={sidebarOpen} 
+        />
+        
+        {/* Contenu de la page */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>
-      <Footer />
     </div>
   );
 };
+
+export default DashboardLayout;

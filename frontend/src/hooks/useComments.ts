@@ -1,103 +1,110 @@
-'use client';
-
+/**
+ * Hook personnalisé pour gérer les commentaires
+ * @module hooks/useComments
+ */
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { commentsService } from '@/lib/api';
-import { Comment, CreateCommentDto, UpdateCommentDto } from '@/types';
+import { commentsService } from '../lib/api';
+import { Comment, CommentFilters, CreateCommentDto, UpdateCommentDto } from '../types';
 
 /**
- * Hook personnalisé pour gérer les opérations CRUD sur les commentaires
- * @returns {Object} Méthodes et états pour manipuler les commentaires
+ * Clés de cache pour React Query
  */
-export const useComments = () => {
+export const commentsKeys = {
+  all: ['comments'] as const,
+  lists: () => [...commentsKeys.all, 'list'] as const,
+  list: (filters: CommentFilters) => [...commentsKeys.lists(), filters] as const,
+  details: () => [...commentsKeys.all, 'detail'] as const,
+  detail: (id: string) => [...commentsKeys.details(), id] as const,
+  byDeadline: (deadlineId: string) => [...commentsKeys.lists(), 'deadline', deadlineId] as const,
+};
+
+/**
+ * Hook pour récupérer les commentaires d'une échéance
+ * @param deadlineId - ID de l'échéance
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useCommentsByDeadline(deadlineId: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: commentsKeys.byDeadline(deadlineId),
+    queryFn: () => commentsService.getCommentsByDeadline(deadlineId),
+    enabled: !!deadlineId && enabled,
+  });
+}
+
+/**
+ * Hook pour la création, la mise à jour et la suppression de commentaires
+ * @returns Fonctions pour la gestion des commentaires
+ */
+export function useCommentMutations() {
   const queryClient = useQueryClient();
   
-  /**
-   * Récupération des commentaires d'une échéance
-   * @param {string} deadlineId - ID de l'échéance
-   * @returns {Object} Données, états de chargement et erreurs
-   */
-  const useDeadlineComments = (deadlineId: string | null) => {
-    return useQuery({
-      queryKey: ['comments', 'deadline', deadlineId],
-      queryFn: () => commentsService.getByDeadline(deadlineId as string),
-      enabled: !!deadlineId // Ne déclenche la requête que si deadlineId est fourni
-    });
-  };
-  
-  // Création d'un commentaire
-  const createMutation = useMutation({
-    mutationFn: (comment: CreateCommentDto) => commentsService.create(comment),
-    onSuccess: (_, variables) => {
-      // Invalider le cache pour les commentaires de cette échéance
+  // Mutation pour créer un commentaire
+  const createCommentMutation = useMutation({
+    mutationFn: (newComment: CreateCommentDto) => commentsService.createComment(newComment),
+    onSuccess: (createdComment) => {
+      // Invalide la liste des commentaires pour l'échéance concernée
       queryClient.invalidateQueries({ 
-        queryKey: ['comments', 'deadline', variables.deadlineId] 
+        queryKey: commentsKeys.byDeadline(createdComment.deadlineId) 
       });
-    }
+    },
   });
   
-  // Mise à jour d'un commentaire
-  const updateMutation = useMutation({
+  // Mutation pour mettre à jour un commentaire
+  const updateCommentMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateCommentDto }) => 
-      commentsService.update(id, data),
-    onSuccess: (data) => {
-      // L'API renvoie le commentaire mis à jour avec son deadlineId
-      if (data && 'deadlineId' in data) {
-        queryClient.invalidateQueries({ 
-          queryKey: ['comments', 'deadline', data.deadlineId] 
-        });
-      }
-    }
+      commentsService.updateComment(id, data),
+    onSuccess: (updatedComment) => {
+      // Mise à jour du cache pour le commentaire modifié
+      queryClient.setQueryData(
+        commentsKeys.detail(updatedComment.id),
+        updatedComment
+      );
+      // Invalide la liste des commentaires pour l'échéance concernée
+      queryClient.invalidateQueries({ 
+        queryKey: commentsKeys.byDeadline(updatedComment.deadlineId) 
+      });
+    },
   });
   
-  // Suppression d'un commentaire
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => commentsService.delete(id),
-    onSuccess: (_, variables, context) => {
-      // Le contexte doit contenir le deadlineId pour invalider les requêtes appropriées
-      if (context && typeof context === 'object' && 'deadlineId' in context) {
+  // Mutation pour supprimer un commentaire
+  const deleteCommentMutation = useMutation({
+    mutationFn: (id: string) => commentsService.deleteComment(id),
+    onSuccess: (_, id) => {
+      // Récupère le commentaire du cache avant de le supprimer
+      const comment = queryClient.getQueryData<Comment>(commentsKeys.detail(id));
+      
+      // Supprime le commentaire du cache
+      queryClient.removeQueries({ queryKey: commentsKeys.detail(id) });
+      
+      // Si on a le commentaire, on invalide la liste des commentaires pour l'échéance concernée
+      if (comment) {
         queryClient.invalidateQueries({ 
-          queryKey: ['comments', 'deadline', context.deadlineId] 
+          queryKey: commentsKeys.byDeadline(comment.deadlineId) 
         });
       }
-    }
+    },
   });
-
-  /**
-   * Créer un nouveau commentaire
-   * @param {CreateCommentDto} comment - Données du commentaire à créer
-   * @returns {Promise<Comment>} Commentaire créé
-   */
-  const createComment = async (comment: CreateCommentDto): Promise<Comment> => {
-    return createMutation.mutateAsync(comment);
-  };
-
-  /**
-   * Mettre à jour un commentaire existant
-   * @param {string} id - ID du commentaire
-   * @param {UpdateCommentDto} data - Données à mettre à jour
-   * @returns {Promise<Comment>} Commentaire mis à jour
-   */
-  const updateComment = async (id: string, data: UpdateCommentDto): Promise<Comment> => {
-    return updateMutation.mutateAsync({ id, data });
-  };
-
-  /**
-   * Supprimer un commentaire
-   * @param {string} id - ID du commentaire
-   * @param {string} deadlineId - ID de l'échéance associée (pour invalidation du cache)
-   * @returns {Promise<void>}
-   */
-  const deleteComment = async (id: string, deadlineId: string): Promise<void> => {
-    return deleteMutation.mutateAsync(id, { context: { deadlineId } });
-  };
-
+  
   return {
-    useDeadlineComments,
-    createComment,
-    updateComment,
-    deleteComment,
-    isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending
+    createComment: useCallback(
+      (newComment: CreateCommentDto) => createCommentMutation.mutateAsync(newComment),
+      [createCommentMutation]
+    ),
+    updateComment: useCallback(
+      (id: string, data: UpdateCommentDto) => updateCommentMutation.mutateAsync({ id, data }),
+      [updateCommentMutation]
+    ),
+    deleteComment: useCallback(
+      (id: string) => deleteCommentMutation.mutateAsync(id),
+      [deleteCommentMutation]
+    ),
+    isCreating: createCommentMutation.isPending,
+    isUpdating: updateCommentMutation.isPending,
+    isDeleting: deleteCommentMutation.isPending,
+    createError: createCommentMutation.error,
+    updateError: updateCommentMutation.error,
+    deleteError: deleteCommentMutation.error,
   };
-};
+}

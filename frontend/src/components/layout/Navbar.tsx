@@ -1,157 +1,160 @@
-'use client';
-
-import React, { useState } from 'react';
+/**
+ * Composant de barre de navigation principale
+ * Affiche la barre de navigation supérieure avec logo, titre, et actions utilisateur
+ * @module components/layout/Navbar
+ */
+import React from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
+import { 
+  Menu, 
+  BellIcon, 
+  UserCircle, 
+  LogOut, 
+  Settings, 
+  ChevronDown,
+  CalendarIcon,
+  ListTodoIcon,
+  LayoutDashboardIcon
+} from 'lucide-react';
+import { Button } from '../ui/Button';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
- * Barre de navigation principale de l'application
- * @returns {JSX.Element} Composant de barre de navigation
+ * Props du composant Navbar
  */
-export const Navbar: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+interface NavbarProps {
+  /** Fonction pour ouvrir/fermer le sidebar */
+  toggleSidebar?: () => void;
+  /** Indique si le sidebar est ouvert */
+  isSidebarOpen?: boolean;
+}
 
-  // Fonction factice pour simuler la déconnexion
-  const handleLogout = () => {
-    console.log("Déconnexion");
-    // Dans une implémentation réelle, cette fonction utiliserait useAuth()
-    // Pour le POC, nous simulons simplement la présence d'un utilisateur
-  };
+/**
+ * Composant Navbar - Barre de navigation supérieure de l'application
+ * @param props - Propriétés du composant
+ * @returns Composant Navbar
+ */
+export const Navbar = ({ toggleSidebar, isSidebarOpen }: NavbarProps) => {
+  const { user, logout } = useAuth();
+  
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   
   return (
-    <header className="bg-gray-900 text-white">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex justify-between items-center">
-          {/* Logo et titre pour mobile */}
-          <div className="flex items-center md:hidden">
-            <button 
-              className="text-gray-300 hover:text-white focus:outline-none"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <div className="mx-auto px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between">
+          {/* Section gauche - Logo et bouton du menu */}
+          <div className="flex items-center">
+            {/* Bouton pour le menu latéral (visible sur mobile/tablette) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-2 lg:hidden"
+              aria-label={isSidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              onClick={toggleSidebar}
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-6 w-6" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M4 6h16M4 12h16M4 18h16" 
-                />
-              </svg>
-            </button>
-            <Link href="/" className="ml-3 font-bold text-xl">
-              <span className="text-blue-400">GE</span> Défense
-            </Link>
-          </div>
-          
-          {/* Menu de recherche et notifications */}
-          <div className="hidden md:flex items-center w-full max-w-xs ml-8">
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                className="w-full pl-10 pr-4 py-1 rounded-md bg-gray-800 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-4 w-4 text-gray-400" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          {/* Liens, notifications et profil */}
-          <div className="flex items-center space-x-4">
-            <button className="p-1 rounded-full hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-6 w-6 text-gray-300" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" 
-                />
-              </svg>
-            </button>
-            
-            <span className="text-sm mr-2 hidden md:inline-block">
-              Utilisateur POC
-            </span>
-            
-            <Button variant="secondary" size="sm" onClick={handleLogout}>
-              Déconnexion
+              <Menu className="h-6 w-6" />
             </Button>
-          </div>
-        </div>
-        
-        {/* Menu mobile */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-3 pt-3 border-t border-gray-700">
-            <div className="flex flex-col space-y-3">
-              <Link href="/" className="text-white hover:bg-gray-800 px-3 py-2 rounded-md">
+            
+            {/* Logo et titre */}
+            <Link href="/dashboard" className="flex items-center">
+              <span className="text-slate-900 font-bold text-xl">DeadlineManager</span>
+            </Link>
+            
+            {/* Navigation principale (visible sur grands écrans) */}
+            <nav className="hidden md:ml-8 md:flex md:space-x-4">
+              <Link 
+                href="/dashboard" 
+                className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-700 hover:bg-slate-100"
+              >
+                <LayoutDashboardIcon className="h-4 w-4 mr-2" />
                 Tableau de bord
               </Link>
-              <Link href="/calendar" className="text-white hover:bg-gray-800 px-3 py-2 rounded-md">
-                Calendrier
-              </Link>
-              <Link href="/deadlines" className="text-white hover:bg-gray-800 px-3 py-2 rounded-md">
+              <Link 
+                href="/deadlines" 
+                className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-700 hover:bg-slate-100"
+              >
+                <ListTodoIcon className="h-4 w-4 mr-2" />
                 Échéances
               </Link>
-              <Link href="/chat" className="text-white hover:bg-gray-800 px-3 py-2 rounded-md">
-                Chat IA
+              <Link 
+                href="/calendar" 
+                className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-700 hover:bg-slate-100"
+              >
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                Calendrier
               </Link>
-              <Link href="/settings" className="text-white hover:bg-gray-800 px-3 py-2 rounded-md">
-                Paramètres
-              </Link>
-            </div>
-            <div className="mt-4 pt-3 border-t border-gray-700">
-              <div className="relative w-full mb-3">
-                <input
-                  type="text"
-                  placeholder="Rechercher..."
-                  className="w-full pl-10 pr-4 py-2 rounded-md bg-gray-800 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4 text-gray-400" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
+            </nav>
+          </div>
+          
+          {/* Section droite - Actions utilisateur */}
+          <div className="flex items-center space-x-4">
+            {/* Notification (visible sur tous les écrans) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              aria-label="Notifications"
+            >
+              <BellIcon className="h-5 w-5" />
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">
+                3
+              </span>
+            </Button>
+            
+            {/* Menu utilisateur */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-expanded={isMenuOpen}
+                aria-haspopup="true"
+              >
+                <UserCircle className="h-6 w-6 mr-1" />
+                <span className="hidden md:block">{user?.firstName || 'Utilisateur'}</span>
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+              
+              {/* Contenu du menu déroulant */}
+              {isMenuOpen && (
+                <div 
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-slate-200 py-1 z-40"
+                  onBlur={() => setIsMenuOpen(false)}
+                >
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                  </div>
+                  
+                  <Link 
+                    href="/settings" 
+                    className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 w-full text-left"
+                    onClick={() => setIsMenuOpen(false)}
                   >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
-                    />
-                  </svg>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Paramètres
+                  </Link>
+                  
+                  <button 
+                    className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 w-full text-left"
+                    onClick={() => {
+                      logout();
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Déconnexion
+                  </button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </header>
   );
 };
+
+export default Navbar;

@@ -1,31 +1,76 @@
-'use client';
-
+/**
+ * Hook personnalisé pour gérer les pièces jointes
+ * @module hooks/useAttachments
+ */
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { attachmentsService } from '@/lib/api';
-import { Attachment, UploadResponse } from '@/types';
+import { attachmentsService } from '../lib/api';
+import { Attachment, AttachmentFilters, UploadResponse } from '../types';
 
 /**
- * Hook personnalisé pour gérer les opérations sur les pièces jointes
- * @returns {Object} Méthodes et états pour manipuler les pièces jointes
+ * Clés de cache pour React Query
  */
-export const useAttachments = () => {
+export const attachmentsKeys = {
+  all: ['attachments'] as const,
+  lists: () => [...attachmentsKeys.all, 'list'] as const,
+  list: (filters: AttachmentFilters) => [...attachmentsKeys.lists(), filters] as const,
+  details: () => [...attachmentsKeys.all, 'detail'] as const,
+  detail: (id: string) => [...attachmentsKeys.details(), id] as const,
+  byDeadline: (deadlineId: string) => [...attachmentsKeys.lists(), 'deadline', deadlineId] as const,
+  byUploader: (uploaderId: string) => [...attachmentsKeys.lists(), 'uploader', uploaderId] as const,
+};
+
+/**
+ * Hook pour récupérer la liste des pièces jointes avec filtres
+ * @param filters - Filtres à appliquer
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useAttachmentsList(filters?: AttachmentFilters, enabled: boolean = true) {
+  return useQuery({
+    queryKey: attachmentsKeys.list(filters || {}),
+    queryFn: () => attachmentsService.getAttachments(filters),
+    enabled,
+  });
+}
+
+/**
+ * Hook pour récupérer une pièce jointe par son ID
+ * @param id - ID de la pièce jointe
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useAttachment(id: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: attachmentsKeys.detail(id),
+    queryFn: () => attachmentsService.getAttachmentById(id),
+    enabled: !!id && enabled,
+  });
+}
+
+/**
+ * Hook pour récupérer les pièces jointes d'une échéance
+ * @param deadlineId - ID de l'échéance
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useAttachmentsByDeadline(deadlineId: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: attachmentsKeys.byDeadline(deadlineId),
+    queryFn: () => attachmentsService.getAttachmentsByDeadline(deadlineId),
+    enabled: !!deadlineId && enabled,
+  });
+}
+
+/**
+ * Hook pour télécharger et supprimer des pièces jointes
+ * @returns Fonctions pour la gestion des pièces jointes
+ */
+export function useAttachmentMutations() {
   const queryClient = useQueryClient();
   
-  /**
-   * Récupération des pièces jointes d'une échéance
-   * @param {string} deadlineId - ID de l'échéance
-   * @returns {Object} Données, états de chargement et erreurs
-   */
-  const useDeadlineAttachments = (deadlineId: string | null) => {
-    return useQuery({
-      queryKey: ['attachments', 'deadline', deadlineId],
-      queryFn: () => attachmentsService.getByDeadline(deadlineId as string),
-      enabled: !!deadlineId // Ne déclenche la requête que si deadlineId est fourni
-    });
-  };
-  
-  // Upload d'une pièce jointe
-  const uploadMutation = useMutation({
+  // Mutation pour télécharger une pièce jointe
+  const uploadAttachmentMutation = useMutation({
     mutationFn: ({ 
       file, 
       deadlineId, 
@@ -33,61 +78,107 @@ export const useAttachments = () => {
     }: { 
       file: File; 
       deadlineId: string; 
-      classification?: string 
-    }) => attachmentsService.upload(file, deadlineId, classification),
-    onSuccess: (_, variables) => {
-      // Invalider le cache pour les pièces jointes de cette échéance
+      classification?: string;
+    }) => attachmentsService.uploadAttachment(file, deadlineId, classification),
+    onSuccess: (response) => {
+      // Invalide la liste des pièces jointes pour l'échéance concernée
       queryClient.invalidateQueries({ 
-        queryKey: ['attachments', 'deadline', variables.deadlineId] 
+        queryKey: attachmentsKeys.byDeadline(response.attachment.deadlineId) 
       });
-    }
+    },
   });
   
-  // Suppression d'une pièce jointe
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => attachmentsService.delete(id),
-    onSuccess: (_, __, context) => {
-      // Le contexte doit contenir le deadlineId pour invalider les requêtes appropriées
-      if (context && typeof context === 'object' && 'deadlineId' in context) {
+  // Mutation pour supprimer une pièce jointe
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: (id: string) => attachmentsService.deleteAttachment(id),
+    onSuccess: (_, id) => {
+      // Récupère la pièce jointe du cache avant de la supprimer
+      const attachment = queryClient.getQueryData<Attachment>(attachmentsKeys.detail(id));
+      
+      // Supprime la pièce jointe du cache
+      queryClient.removeQueries({ queryKey: attachmentsKeys.detail(id) });
+      
+      // Si on a la pièce jointe, on invalide la liste des pièces jointes pour l'échéance concernée
+      if (attachment) {
         queryClient.invalidateQueries({ 
-          queryKey: ['attachments', 'deadline', context.deadlineId] 
+          queryKey: attachmentsKeys.byDeadline(attachment.deadlineId) 
         });
       }
-    }
+    },
   });
-
-  /**
-   * Uploader un fichier en tant que pièce jointe
-   * @param {File} file - Fichier à charger
-   * @param {string} deadlineId - ID de l'échéance associée
-   * @param {string} [classification] - Classification optionnelle du document
-   * @returns {Promise<UploadResponse>} Informations sur la pièce jointe créée
-   */
-  const uploadAttachment = async (
-    file: File, 
-    deadlineId: string,
-    classification?: string
-  ): Promise<UploadResponse> => {
-    return uploadMutation.mutateAsync({ file, deadlineId, classification });
-  };
-
-  /**
-   * Supprimer une pièce jointe
-   * @param {string} id - ID de la pièce jointe
-   * @param {string} deadlineId - ID de l'échéance associée (pour invalidation du cache)
-   * @returns {Promise<void>}
-   */
-  const deleteAttachment = async (id: string, deadlineId: string): Promise<void> => {
-    return deleteMutation.mutateAsync(id, { context: { deadlineId } });
-  };
-
+  
   return {
-    useDeadlineAttachments,
-    uploadAttachment,
-    deleteAttachment,
-    isUploading: uploadMutation.isPending,
-    isDeleting: deleteMutation.isPending,
-    uploadError: uploadMutation.error,
-    deleteError: deleteMutation.error
+    uploadAttachment: useCallback(
+      (file: File, deadlineId: string, classification?: string) => 
+        uploadAttachmentMutation.mutateAsync({ file, deadlineId, classification }),
+      [uploadAttachmentMutation]
+    ),
+    deleteAttachment: useCallback(
+      (id: string) => deleteAttachmentMutation.mutateAsync(id),
+      [deleteAttachmentMutation]
+    ),
+    isUploading: uploadAttachmentMutation.isPending,
+    isDeleting: deleteAttachmentMutation.isPending,
+    uploadError: uploadAttachmentMutation.error,
+    deleteError: deleteAttachmentMutation.error,
   };
-};
+}
+
+/**
+ * Interface pour les résultats du hook de gestion du téléchargement de fichiers
+ */
+export interface UseFileUploadResult {
+  /** Fonction pour sélectionner et télécharger un fichier */
+  selectAndUploadFile: (deadlineId: string, classification?: string) => void;
+  
+  /** Fonction pour télécharger un fichier */
+  uploadFile: (file: File, deadlineId: string, classification?: string) => Promise<UploadResponse>;
+  
+  /** Indique si un téléchargement est en cours */
+  isUploading: boolean;
+  
+  /** Erreur éventuelle lors du téléchargement */
+  error: Error | null;
+}
+
+/**
+ * Hook pour gérer le téléchargement de fichiers avec une interface utilisateur simplifiée
+ * @returns Fonctions et états pour le téléchargement de fichiers
+ */
+export function useFileUpload(): UseFileUploadResult {
+  const { uploadAttachment, isUploading, uploadError } = useAttachmentMutations();
+  
+  /**
+   * Fonction pour sélectionner et télécharger un fichier
+   * @param deadlineId - ID de l'échéance associée
+   * @param classification - Classification du document (optionnelle)
+   */
+  const selectAndUploadFile = useCallback((deadlineId: string, classification?: string) => {
+    // Crée un élément input de type file
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    
+    // Définit la fonction à exécuter lorsqu'un fichier est sélectionné
+    fileInput.onchange = async (event) => {
+      const target = event.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        const file = target.files[0];
+        try {
+          await uploadAttachment(file, deadlineId, classification);
+        } catch (error) {
+          console.error('Erreur lors du téléchargement du fichier:', error);
+        }
+      }
+    };
+    
+    // Simule un clic sur l'input pour ouvrir la boîte de dialogue de sélection de fichier
+    fileInput.click();
+  }, [uploadAttachment]);
+  
+  return {
+    selectAndUploadFile,
+    uploadFile: uploadAttachment,
+    isUploading,
+    error: uploadError,
+  };
+}

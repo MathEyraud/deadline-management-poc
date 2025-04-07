@@ -1,23 +1,62 @@
+/**
+ * Page du calendrier des échéances
+ * Affiche un calendrier interactif avec les échéances
+ * @module app/calendar/page
+ */
 'use client';
 
+import React, { useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { CalendarView } from '@/components/calendar/CalendarView';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Button } from '@/components/ui/Button';
+import { Plus } from 'lucide-react';
+import CalendarView from '@/components/calendar/CalendarView';
+import Modal from '@/components/ui/Modal';
+import DeadlineForm from '@/components/deadline/DeadlineForm';
+import { useDeadlinesList } from '@/hooks/useDeadlines';
 
 /**
- * Page affichant les échéances sous forme de calendrier
- * @returns {JSX.Element} Page calendrier des échéances
+ * Page Calendar
+ * Calendrier interactif des échéances
+ * @returns Page Calendar
  */
 export default function CalendarPage() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { refetch } = useDeadlinesList();
+  
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Calendrier" 
-        description="Visualisez vos échéances dans une vue calendrier" 
+    <DashboardLayout>
+      <PageHeader
+        title="Calendrier"
+        description="Visualisez vos échéances dans un calendrier interactif"
+        actions={
+          <Button 
+            variant="primary" 
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            Nouvelle échéance
+          </Button>
+        }
       />
       
-      <div className="bg-white rounded-lg shadow p-4">
-        <CalendarView />
-      </div>
-    </div>
+      <CalendarView />
+      
+      {/* Modal pour créer une échéance */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Créer une nouvelle échéance"
+        size="lg"
+      >
+        <DeadlineForm
+          onSuccess={() => {
+            setIsCreateModalOpen(false);
+            refetch();
+          }}
+          mode="create"
+        />
+      </Modal>
+    </DashboardLayout>
   );
 }

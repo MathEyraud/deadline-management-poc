@@ -1,117 +1,141 @@
-'use client';
-
+/**
+ * Hook personnalisé pour gérer les projets
+ * @module hooks/useProjects
+ */
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectsService } from '@/lib/api';
-import { 
-  Project, 
-  ProjectFilters, 
-  CreateProjectDto,
-  UpdateProjectDto
-} from '@/types';
+import { projectsService } from '../lib/api';
+import { Project, ProjectFilters, CreateProjectDto, UpdateProjectDto } from '../types';
 
 /**
- * Hook personnalisé pour gérer les opérations CRUD sur les projets
- * Utilise l'API backend réelle via React Query
- * @param {ProjectFilters} filters - Options de filtrage pour les projets
- * @returns {Object} Méthodes et états pour manipuler les projets
+ * Clés de cache pour React Query
  */
-export const useProjects = (filters: ProjectFilters = {}) => {
+export const projectsKeys = {
+  all: ['projects'] as const,
+  lists: () => [...projectsKeys.all, 'list'] as const,
+  list: (filters: ProjectFilters) => [...projectsKeys.lists(), filters] as const,
+  details: () => [...projectsKeys.all, 'detail'] as const,
+  detail: (id: string) => [...projectsKeys.details(), id] as const,
+  byManager: (managerId: string) => [...projectsKeys.lists(), 'manager', managerId] as const,
+  byTeam: (teamId: string) => [...projectsKeys.lists(), 'team', teamId] as const,
+};
+
+/**
+ * Hook pour récupérer la liste des projets avec filtres
+ * @param filters - Filtres à appliquer
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useProjectsList(filters?: ProjectFilters, enabled: boolean = true) {
+  return useQuery({
+    queryKey: projectsKeys.list(filters || {}),
+    queryFn: () => projectsService.getProjects(filters),
+    enabled,
+  });
+}
+
+/**
+ * Hook pour récupérer un projet par son ID
+ * @param id - ID du projet
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useProject(id: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: projectsKeys.detail(id),
+    queryFn: () => projectsService.getProjectById(id),
+    enabled: !!id && enabled,
+  });
+}
+
+/**
+ * Hook pour récupérer les projets d'un gestionnaire
+ * @param managerId - ID du gestionnaire
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useProjectsByManager(managerId: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: projectsKeys.byManager(managerId),
+    queryFn: () => projectsService.getProjectsByManager(managerId),
+    enabled: !!managerId && enabled,
+  });
+}
+
+/**
+ * Hook pour récupérer les projets d'une équipe
+ * @param teamId - ID de l'équipe
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useProjectsByTeam(teamId: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: projectsKeys.byTeam(teamId),
+    queryFn: () => projectsService.getProjectsByTeam(teamId),
+    enabled: !!teamId && enabled,
+  });
+}
+
+/**
+ * Hook pour la création, la mise à jour et la suppression de projets
+ * @returns Fonctions pour la gestion des projets
+ */
+export function useProjectMutations() {
   const queryClient = useQueryClient();
   
-  // Récupération des projets
-  const { 
-    data, 
-    isLoading, 
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['projects', filters],
-    queryFn: () => projectsService.getAll(filters)
-  });
-  
-  // Récupération d'un projet par ID
-  const useProject = (id: string) => {
-    return useQuery({
-      queryKey: ['project', id],
-      queryFn: () => projectsService.getById(id),
-      enabled: !!id // Ne déclenche la requête que si l'ID est fourni
-    });
-  };
-  
-  // Création d'un projet
-  const createMutation = useMutation({
-    mutationFn: (project: CreateProjectDto) => projectsService.create(project),
+  // Mutation pour créer un projet
+  const createProjectMutation = useMutation({
+    mutationFn: (newProject: CreateProjectDto) => projectsService.createProject(newProject),
     onSuccess: () => {
-      // Invalider le cache pour forcer un rafraîchissement des données
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-    }
+      // Invalide toutes les listes de projets pour forcer le rechargement
+      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
+    },
   });
   
-  // Mise à jour d'un projet
-  const updateMutation = useMutation({
+  // Mutation pour mettre à jour un projet
+  const updateProjectMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateProjectDto }) => 
-      projectsService.update(id, data),
-    onSuccess: (data, variables) => {
-      // Invalider les requêtes spécifiques
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['project', variables.id] });
-    }
+      projectsService.updateProject(id, data),
+    onSuccess: (updatedProject) => {
+      // Mise à jour du cache pour le projet modifié
+      queryClient.setQueryData(
+        projectsKeys.detail(updatedProject.id),
+        updatedProject
+      );
+      // Invalide les listes qui pourraient contenir ce projet
+      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
+    },
   });
   
-  // Suppression d'un projet
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => projectsService.delete(id),
-    onSuccess: (_, variables) => {
-      // Invalider les requêtes et supprimer du cache
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.removeQueries({ queryKey: ['project', variables] });
-    }
+  // Mutation pour supprimer un projet
+  const deleteProjectMutation = useMutation({
+    mutationFn: (id: string) => projectsService.deleteProject(id),
+    onSuccess: (_, id) => {
+      // Supprime le projet du cache
+      queryClient.removeQueries({ queryKey: projectsKeys.detail(id) });
+      // Invalide les listes qui pourraient contenir ce projet
+      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
+    },
   });
-
-  // Récupération des projets par gestionnaire
-  const useProjectsByManager = (managerId: string | null) => {
-    return useQuery({
-      queryKey: ['projects', 'manager', managerId],
-      queryFn: () => projectsService.getByManager(managerId as string),
-      enabled: !!managerId // Ne déclenche la requête que si managerId est fourni
-    });
-  };
-
-  // Récupération des projets par équipe
-  const useProjectsByTeam = (teamId: string | null) => {
-    return useQuery({
-      queryKey: ['projects', 'team', teamId],
-      queryFn: () => projectsService.getByTeam(teamId as string),
-      enabled: !!teamId // Ne déclenche la requête que si teamId est fourni
-    });
-  };
-
-  // Méthodes exposées pour l'utilisation dans les composants
-  const createProject = async (project: CreateProjectDto): Promise<Project> => {
-    return createMutation.mutateAsync(project);
-  };
-
-  const updateProject = async (id: string, data: UpdateProjectDto): Promise<Project> => {
-    return updateMutation.mutateAsync({ id, data });
-  };
-
-  const deleteProject = async (id: string): Promise<void> => {
-    return deleteMutation.mutateAsync(id);
-  };
-
+  
   return {
-    data,
-    isLoading,
-    error,
-    refetch,
-    useProject,
-    useProjectsByManager,
-    useProjectsByTeam,
-    createProject,
-    updateProject,
-    deleteProject,
-    isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending
+    createProject: useCallback(
+      (newProject: CreateProjectDto) => createProjectMutation.mutateAsync(newProject),
+      [createProjectMutation]
+    ),
+    updateProject: useCallback(
+      (id: string, data: UpdateProjectDto) => updateProjectMutation.mutateAsync({ id, data }),
+      [updateProjectMutation]
+    ),
+    deleteProject: useCallback(
+      (id: string) => deleteProjectMutation.mutateAsync(id),
+      [deleteProjectMutation]
+    ),
+    isCreating: createProjectMutation.isPending,
+    isUpdating: updateProjectMutation.isPending,
+    isDeleting: deleteProjectMutation.isPending,
+    createError: createProjectMutation.error,
+    updateError: updateProjectMutation.error,
+    deleteError: deleteProjectMutation.error,
   };
-};
+}

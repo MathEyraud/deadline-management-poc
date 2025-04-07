@@ -1,12 +1,14 @@
 /**
- * Export de tous les hooks personnalisés pour une importation simplifiée
+ * Index pour exporter tous les hooks personnalisés
+ * Facilite l'importation des hooks
+ * @module hooks
  */
 
-export { useAuth } from './useAuth';
-export { useDeadlines } from './useDeadlines';
-export { useProjects } from './useProjects';
-export { useChat } from './useChat';
-export { useComments } from './useComments';
-export { useAttachments } from './useAttachments';
-export { useTeams } from './useTeams';
-export { useUsers } from './useUsers';
+export * from './useAuth';
+export * from './useDeadlines';
+export * from './useProjects';
+export * from './useComments';
+export * from './useChat';
+export * from './useAttachments';
+export * from './useTeams';
+export * from './useUsers';

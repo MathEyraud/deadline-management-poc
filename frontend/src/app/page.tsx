@@ -1,48 +1,36 @@
+/**
+ * Page d'entrée de l'application
+ * Redirige vers le tableau de bord ou la page de connexion
+ * @module app/page
+ */
 'use client';
 
-import { Suspense } from 'react';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { DeadlineOverview } from '@/components/dashboard/DeadlineOverview';
-import { DeadlineChart } from '@/components/dashboard/DeadlineChart';
-import { DeadlineMetrics } from '@/components/dashboard/DeadlineMetrics';
-import { PageHeader } from '@/components/layout/PageHeader';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
- * Page d'accueil qui sert de tableau de bord principal
- * @returns {JSX.Element} Page d'accueil avec tableau de bord
+ * Page d'entrée
+ * Redirige automatiquement vers la destination appropriée
+ * @returns Page d'entrée
  */
-export default function Home() {
+export default function HomePage() {
+  const router = useRouter();
+  const { isAuthenticated, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      if (isAuthenticated) {
+        router.push('/dashboard');
+      } else {
+        router.push('/auth/login');
+      }
+    }
+  }, [isAuthenticated, loading, router]);
+
   return (
-    <DashboardLayout>
-      <div className="p-4 space-y-6">
-        <PageHeader 
-          title="Tableau de bord" 
-          description="Vue d'ensemble des échéances et des tâches" 
-        />
-        
-        {/* Métriques principales */}
-        <Suspense fallback={<div>Chargement des métriques...</div>}>
-          <DeadlineMetrics />
-        </Suspense>
-        
-        {/* Graphiques de répartition */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Suspense fallback={<div>Chargement des graphiques...</div>}>
-            <DeadlineChart type="priority" />
-          </Suspense>
-          <Suspense fallback={<div>Chargement des graphiques...</div>}>
-            <DeadlineChart type="status" />
-          </Suspense>
-        </div>
-        
-        {/* Vue d'ensemble des échéances imminentes */}
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-3">Échéances imminentes</h2>
-          <Suspense fallback={<div>Chargement des échéances...</div>}>
-            <DeadlineOverview limit={5} />
-          </Suspense>
-        </div>
-      </div>
-    </DashboardLayout>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
   );
 }

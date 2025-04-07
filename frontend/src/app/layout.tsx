@@ -1,24 +1,26 @@
-import './globals.css';
-import { Providers } from './providers';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-
-// Chargement de la police Inter pour toute l'application
-const inter = Inter({ subsets: ['latin'] });
-
 /**
- * Métadonnées de l'application
+ * Layout racine de l'application
+ * Structure de base commune à toutes les pages
+ * @module app/layout
  */
+import "./globals.css";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { Providers } from "./providers";
+
+// Chargement de la police Inter
+const inter = Inter({ subsets: ["latin"] });
+
+// Métadonnées de l'application
 export const metadata: Metadata = {
-  title: 'Gestion d\'Échéances - Secteur Défense',
-  description: 'Application sécurisée de gestion d\'échéances pour le secteur défense',
+  title: "DeadlineManager - Gestion d'échéances",
+  description: "Application de gestion d'échéances pour le secteur de la défense",
 };
 
 /**
- * Layout principal de l'application qui enveloppe toutes les pages
- * @param {Object} props - Propriétés du composant
- * @param {React.ReactNode} props.children - Contenu des pages
- * @returns {JSX.Element} Layout principal
+ * Layout racine qui englobe toute l'application
+ * @param props - Propriétés du composant
+ * @returns Layout racine
  */
 export default function RootLayout({
   children,

@@ -1,59 +1,94 @@
-'use client';
+/**
+ * Composant Select personnalisé
+ * Liste déroulante réutilisable avec support d'erreurs et d'états
+ * @module components/ui/Select
+ */
+import React, { SelectHTMLAttributes, forwardRef } from 'react';
+import { cn } from '@/lib/utils';
 
-import React, { forwardRef } from 'react';
-
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  /**
-   * Message d'erreur à afficher
-   */
-  error?: string;
-  
-  /**
-   * Contenu du select (options)
-   */
-  children: React.ReactNode;
+/**
+ * Option pour le Select
+ */
+export interface SelectOption {
+  /** Valeur de l'option */
+  value: string;
+  /** Texte à afficher */
+  label: string;
+  /** Désactive l'option si true */
+  disabled?: boolean;
 }
 
 /**
- * Composant Select réutilisable avec gestion des erreurs
- * @param {Object} props - Propriétés du composant
- * @returns {JSX.Element} Composant Select
+ * Props spécifiques au composant Select
  */
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className = '', error, children, ...props }, ref) => {
-    // Styles de base pour tous les selects
-    const baseStyles = 'w-full px-3 py-2 border rounded-md text-sm appearance-none bg-white';
-    
-    // Appliquer des styles spécifiques selon qu'il y a une erreur ou non
-    const statusStyles = error
-      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500';
-    
-    // Assembler toutes les classes CSS
-    const selectStyles = `${baseStyles} ${statusStyles} ${className}`;
-    
+export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
+  /** Message d'erreur à afficher sous le select */
+  error?: string;
+  /** Label à afficher au-dessus du select */
+  label?: string;
+  /** Texte d'aide à afficher sous le select */
+  helperText?: string;
+  /** Options du select */
+  options: SelectOption[];
+  /** Taille du select */
+  size?: 'sm' | 'md' | 'lg';
+}
+
+/**
+ * Composant Select personnalisé
+ * @param props - Propriétés du select
+ * @returns Composant Select
+ */
+const Select = forwardRef<HTMLSelectElement, SelectProps>(
+  ({ className, error, label, helperText, options, size = 'md', ...props }, ref) => {
+    const sizeClasses = {
+      sm: 'h-8 text-xs',
+      md: 'h-10 text-sm',
+      lg: 'h-12 text-base',
+    };
+
+    const selectClasses = cn(
+      "flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+      sizeClasses[size],
+      error && "border-red-500 focus:ring-red-500",
+      className
+    );
+
     return (
-      <div className="w-full relative">
+      <div className="space-y-1">
+        {label && (
+          <label
+            className="block text-sm font-medium text-slate-700"
+            htmlFor={props.id}
+          >
+            {label}
+          </label>
+        )}
         <select
+          className={selectClasses}
           ref={ref}
-          className={selectStyles}
           {...props}
         >
-          {children}
+          {options.map((option) => (
+            <option 
+              key={option.value} 
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </option>
+          ))}
         </select>
-        {/* Flèche de dropdown personnalisée */}
-        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-        {error && (
-          <p className="mt-1 text-sm text-red-600">{error}</p>
+        {(error || helperText) && (
+          <p className={`text-sm ${error ? 'text-red-500' : 'text-slate-500'}`}>
+            {error || helperText}
+          </p>
         )}
       </div>
     );
   }
 );
 
-// Définir un nom d'affichage pour les DevTools React
-Select.displayName = 'Select';
+Select.displayName = "Select";
+
+export { Select };

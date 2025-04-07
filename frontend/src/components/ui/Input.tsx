@@ -1,46 +1,80 @@
-'use client';
+/**
+ * Composant Input personnalisé
+ * Champ de saisie texte réutilisable avec support d'erreurs et d'états
+ * @module components/ui/Input
+ */
+import React, { InputHTMLAttributes, forwardRef } from 'react';
+import { cn } from '@/lib/utils';
 
-import React, { forwardRef } from 'react';
-
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  /**
-   * Message d'erreur à afficher
-   */
+/**
+ * Props spécifiques au composant Input
+ */
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  /** Message d'erreur à afficher sous l'input */
   error?: string;
+  /** Label à afficher au-dessus de l'input */
+  label?: string;
+  /** Texte d'aide à afficher sous l'input */
+  helperText?: string;
+  /** Contenu à afficher à gauche de l'input */
+  leftAddon?: React.ReactNode;
+  /** Contenu à afficher à droite de l'input */
+  rightAddon?: React.ReactNode;
 }
 
 /**
- * Composant Input réutilisable avec gestion des erreurs
- * @param {Object} props - Propriétés du composant
- * @returns {JSX.Element} Composant Input
+ * Composant Input personnalisé
+ * @param props - Propriétés de l'input
+ * @returns Composant Input
  */
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className = '', error, ...props }, ref) => {
-    // Styles de base pour tous les inputs
-    const baseStyles = 'w-full px-3 py-2 border rounded-md text-sm';
-    
-    // Appliquer des styles spécifiques selon qu'il y a une erreur ou non
-    const statusStyles = error
-      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500';
-    
-    // Assembler toutes les classes CSS
-    const inputStyles = `${baseStyles} ${statusStyles} ${className}`;
-    
+const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ className, error, label, helperText, leftAddon, rightAddon, ...props }, ref) => {
+    const inputClasses = cn(
+      "flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+      error && "border-red-500 focus:ring-red-500",
+      (leftAddon || rightAddon) && "rounded-none",
+      leftAddon && "rounded-r-md",
+      rightAddon && "rounded-l-md",
+      className
+    );
+
     return (
-      <div className="w-full">
-        <input
-          ref={ref}
-          className={inputStyles}
-          {...props}
-        />
-        {error && (
-          <p className="mt-1 text-sm text-red-600">{error}</p>
+      <div className="space-y-1">
+        {label && (
+          <label
+            className="block text-sm font-medium text-slate-700"
+            htmlFor={props.id}
+          >
+            {label}
+          </label>
+        )}
+        <div className="relative flex">
+          {leftAddon && (
+            <div className="inline-flex items-center rounded-l-md border border-r-0 border-slate-300 bg-slate-100 px-3 text-slate-500">
+              {leftAddon}
+            </div>
+          )}
+          <input
+            className={inputClasses}
+            ref={ref}
+            {...props}
+          />
+          {rightAddon && (
+            <div className="inline-flex items-center rounded-r-md border border-l-0 border-slate-300 bg-slate-100 px-3 text-slate-500">
+              {rightAddon}
+            </div>
+          )}
+        </div>
+        {(error || helperText) && (
+          <p className={`text-sm ${error ? 'text-red-500' : 'text-slate-500'}`}>
+            {error || helperText}
+          </p>
         )}
       </div>
     );
   }
 );
 
-// Définir un nom d'affichage pour les DevTools React
-Input.displayName = 'Input';
+Input.displayName = "Input";
+
+export { Input };

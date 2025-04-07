@@ -1,128 +1,130 @@
-import api, { handleApiError } from './client';
-import { Team, CreateTeamDto, UpdateTeamDto } from '@/types';
+/**
+ * Service d'API pour les équipes
+ * Gère les opérations CRUD sur les équipes
+ * @module api/teams
+ */
+import api from './client';
+import handleApiError from './errorHandler';
+import { Team, TeamFilters, CreateTeamDto, UpdateTeamDto } from '../../types';
 
 /**
- * Service pour gérer les opérations CRUD sur les équipes
+ * Récupère toutes les équipes avec filtres optionnels
+ * @param filters - Filtres à appliquer à la requête
+ * @returns Liste des équipes correspondant aux filtres
  */
-export const teamsService = {
-  /**
-   * Récupérer toutes les équipes avec filtres optionnels
-   * @param {Object} filters - Filtres optionnels (leaderId, department, etc.)
-   * @returns {Promise<Team[]>} Liste des équipes
-   */
-  getAll: async (filters = {}): Promise<Team[]> => {
-    try {
-      // Transformer les filtres en paramètres de requête
-      const queryParams = new URLSearchParams();
-      
+export const getTeams = async (filters?: TeamFilters): Promise<Team[]> => {
+  try {
+    // Construction des paramètres de requête
+    const params = new URLSearchParams();
+    
+    if (filters) {
+      // Ajout de chaque filtre défini aux paramètres de requête
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          queryParams.append(key, String(value));
+          params.append(key, String(value));
         }
       });
-      
-      const query = queryParams.toString();
-      const url = query ? `/teams?${query}` : '/teams';
-      
-      const response = await api.get<Team[]>(url);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      throw error;
     }
-  },
-  
-  /**
-   * Récupérer une équipe par son ID
-   * @param {string} id - ID de l'équipe
-   * @returns {Promise<Team>} Détails de l'équipe
-   */
-  getById: async (id: string): Promise<Team> => {
-    try {
-      const response = await api.get<Team>(`/teams/${id}`);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Créer une nouvelle équipe
-   * @param {CreateTeamDto} data - Données de l'équipe à créer
-   * @returns {Promise<Team>} Équipe créée
-   */
-  create: async (data: CreateTeamDto): Promise<Team> => {
-    try {
-      const response = await api.post<Team>('/teams', data);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Mettre à jour une équipe existante
-   * @param {string} id - ID de l'équipe
-   * @param {UpdateTeamDto} data - Données à mettre à jour
-   * @returns {Promise<Team>} Équipe mise à jour
-   */
-  update: async (id: string, data: UpdateTeamDto): Promise<Team> => {
-    try {
-      const response = await api.patch<Team>(`/teams/${id}`, data);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Supprimer une équipe
-   * @param {string} id - ID de l'équipe à supprimer
-   * @returns {Promise<void>}
-   */
-  delete: async (id: string): Promise<void> => {
-    try {
-      await api.delete(`/teams/${id}`);
-    } catch (error) {
-      handleApiError(error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Ajouter un membre à une équipe
-   * @param {string} teamId - ID de l'équipe
-   * @param {string} userId - ID de l'utilisateur à ajouter
-   * @returns {Promise<Team>} Équipe mise à jour
-   */
-  addMember: async (teamId: string, userId: string): Promise<Team> => {
-    try {
-      const response = await api.post<Team>(`/teams/${teamId}/members/${userId}`);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Retirer un membre d'une équipe
-   * @param {string} teamId - ID de l'équipe
-   * @param {string} userId - ID de l'utilisateur à retirer
-   * @returns {Promise<Team>} Équipe mise à jour
-   */
-  removeMember: async (teamId: string, userId: string): Promise<Team> => {
-    try {
-      const response = await api.delete<Team>(`/teams/${teamId}/members/${userId}`);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      throw error;
-    }
+    
+    const response = await api.get<Team[]>(`/teams?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
   }
 };
 
-export default teamsService;
+/**
+ * Récupère une équipe par son ID
+ * @param id - ID de l'équipe à récupérer
+ * @returns Détails de l'équipe demandée
+ */
+export const getTeamById = async (id: string): Promise<Team> => {
+  try {
+    const response = await api.get<Team>(`/teams/${id}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Crée une nouvelle équipe
+ * @param teamData - Données de l'équipe à créer
+ * @returns L'équipe créée
+ */
+export const createTeam = async (teamData: CreateTeamDto): Promise<Team> => {
+  try {
+    const response = await api.post<Team>('/teams', teamData);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Met à jour une équipe existante
+ * @param id - ID de l'équipe à mettre à jour
+ * @param teamData - Données à mettre à jour
+ * @returns L'équipe mise à jour
+ */
+export const updateTeam = async (id: string, teamData: UpdateTeamDto): Promise<Team> => {
+  try {
+    const response = await api.patch<Team>(`/teams/${id}`, teamData);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Supprime une équipe
+ * @param id - ID de l'équipe à supprimer
+ * @returns void
+ */
+export const deleteTeam = async (id: string): Promise<void> => {
+  try {
+    await api.delete(`/teams/${id}`);
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Ajoute un membre à une équipe
+ * @param teamId - ID de l'équipe
+ * @param userId - ID de l'utilisateur à ajouter
+ * @returns L'équipe mise à jour
+ */
+export const addTeamMember = async (teamId: string, userId: string): Promise<Team> => {
+  try {
+    const response = await api.post<Team>(`/teams/${teamId}/members/${userId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Retire un membre d'une équipe
+ * @param teamId - ID de l'équipe
+ * @param userId - ID de l'utilisateur à retirer
+ * @returns L'équipe mise à jour
+ */
+export const removeTeamMember = async (teamId: string, userId: string): Promise<Team> => {
+  try {
+    const response = await api.delete<Team>(`/teams/${teamId}/members/${userId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export default {
+  getTeams,
+  getTeamById,
+  createTeam,
+  updateTeam,
+  deleteTeam,
+  addTeamMember,
+  removeTeamMember,
+};

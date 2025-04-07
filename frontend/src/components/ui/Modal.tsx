@@ -1,117 +1,138 @@
-import React, { useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+/**
+ * Composant Modal personnalisé
+ * Fenêtre modale réutilisable pour les dialogs
+ * @module components/ui/Modal
+ */
+import React, { Fragment, ReactNode } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import { Button } from './Button';
+import { XIcon } from 'lucide-react';
 
-interface ModalProps {
-  /**
-   * Indique si le modal est ouvert
-   */
+/**
+ * Props pour le composant Modal
+ */
+export interface ModalProps {
+  /** Titre de la modale */
+  title?: string;
+  /** Contenu de la modale */
+  children: ReactNode;
+  /** État d'ouverture de la modale */
   isOpen: boolean;
-  
-  /**
-   * Gestionnaire de fermeture du modal
-   */
+  /** Fonction pour fermer la modale */
   onClose: () => void;
-  
-  /**
-   * Titre du modal
-   */
-  title: string;
-  
-  /**
-   * Contenu du modal
-   */
-  children: React.ReactNode;
-  
-  /**
-   * Contenu du pied de page
-   */
-  footer?: React.ReactNode;
-  
-  /**
-   * Largeur maximale du modal
-   */
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  /** Affiche le bouton de fermeture dans le header si true */
+  showCloseButton?: boolean;
+  /** Taille de la modale */
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  /** Footer de la modale */
+  footer?: ReactNode;
+  /** Désactive la fermeture en cliquant sur le fond ou avec Escape */
+  preventClose?: boolean;
 }
 
 /**
- * Composant Modal réutilisable pour afficher du contenu en superposition
- * @param {Object} props - Propriétés du composant
- * @returns {JSX.Element | null} Composant Modal
+ * Composant Modal personnalisé
+ * @param props - Propriétés de la modale
+ * @returns Composant Modal
  */
-export const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  onClose,
+export function Modal({
   title,
   children,
+  isOpen,
+  onClose,
+  showCloseButton = true,
+  size = 'md',
   footer,
-  maxWidth = 'md'
-}) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-  
-  // Fermer le modal en appuyant sur la touche Escape
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden'; // Empêcher le défilement de la page
-    }
-    
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = ''; // Restaurer le défilement
-    };
-  }, [isOpen, onClose]);
-  
-  // Fermer le modal en cliquant à l'extérieur
-  const handleOutsideClick = (e: React.MouseEvent) => {
-    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-      onClose();
-    }
-  };
-  
-  // Mapper la propriété maxWidth à une classe Tailwind
-  const maxWidthClasses = {
+  preventClose = false,
+}: ModalProps) {
+  const sizes = {
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-lg',
     xl: 'max-w-xl',
-    '2xl': 'max-w-2xl'
+    full: 'max-w-4xl',
   };
-  
-  if (!isOpen) return null;
-  
-  // Utiliser createPortal pour rendre le modal en dehors de la hiérarchie DOM normale
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" onClick={handleOutsideClick}>
-      <div ref={modalRef} className={`w-full ${maxWidthClasses[maxWidth]} bg-white rounded-lg shadow-xl overflow-hidden`}>
-        {/* En-tête */}
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-lg font-medium">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500 focus:outline-none"
-            aria-label="Fermer"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+
+  // Fonction pour fermer la modale
+  const handleClose = () => {
+    if (!preventClose) {
+      onClose();
+    }
+  };
+
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={handleClose}>
+        {/* Fond semi-transparent */}
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black bg-opacity-50" />
+        </Transition.Child>
+
+        {/* Contenu de la modale */}
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel 
+                className={`w-full ${sizes[size]} transform overflow-hidden rounded-lg bg-white text-left align-middle shadow-xl transition-all`}
+              >
+                {/* Header */}
+                {(title || showCloseButton) && (
+                  <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+                    {title && (
+                      <Dialog.Title 
+                        as="h3" 
+                        className="text-lg font-medium text-slate-900"
+                      >
+                        {title}
+                      </Dialog.Title>
+                    )}
+                    {showCloseButton && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={onClose}
+                        aria-label="Fermer"
+                      >
+                        <XIcon className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {/* Contenu */}
+                <div className="p-6">
+                  {children}
+                </div>
+
+                {/* Footer */}
+                {footer && (
+                  <div className="border-t border-slate-200 px-6 py-4 bg-slate-50">
+                    {footer}
+                  </div>
+                )}
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
         </div>
-        
-        {/* Corps */}
-        <div className="px-6 py-4">{children}</div>
-        
-        {/* Pied de page optionnel */}
-        {footer && (
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">{footer}</div>
-        )}
-      </div>
-    </div>,
-    document.body
+      </Dialog>
+    </Transition>
   );
-};
+}
+
+export default Modal;

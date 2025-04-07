@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { DeadlineFilter } from '@/components/deadline/DeadlineFilter';
+// import { DeadlineFilter } from '@/components/deadline/DeadlineFilter';
 
 /**
  * Page affichant les échéances sous forme de calendrier
@@ -18,7 +18,7 @@ export default function Calendar() {
         />
         
         {/* Filtres */}
-        <DeadlineFilter />
+        {/* <DeadlineFilter /> */}
         
         {/* Vue calendrier */}
         <div className="mt-6 bg-white rounded-lg shadow p-4">

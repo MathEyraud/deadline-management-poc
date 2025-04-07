@@ -1,141 +1,113 @@
-'use client';
-
+/**
+ * Hook personnalisé pour gérer les utilisateurs
+ * @module hooks/useUsers
+ */
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { usersService } from '@/lib/api';
-import { User, CreateUserDto, UpdateUserDto } from '@/types';
+import { usersService } from '../lib/api';
+import { User, UserFilters, CreateUserDto, UpdateUserDto } from '../types';
 
 /**
- * Hook personnalisé pour gérer les opérations CRUD sur les utilisateurs
- * @returns {Object} Méthodes et états pour manipuler les utilisateurs
+ * Clés de cache pour React Query
  */
-export const useUsers = () => {
+export const usersKeys = {
+  all: ['users'] as const,
+  lists: () => [...usersKeys.all, 'list'] as const,
+  list: (filters: UserFilters) => [...usersKeys.lists(), filters] as const,
+  details: () => [...usersKeys.all, 'detail'] as const,
+  detail: (id: string) => [...usersKeys.details(), id] as const,
+  byRole: (role: string) => [...usersKeys.lists(), 'role', role] as const,
+  byDepartment: (department: string) => [...usersKeys.lists(), 'department', department] as const,
+};
+
+/**
+ * Hook pour récupérer la liste des utilisateurs avec filtres
+ * @param filters - Filtres à appliquer
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useUsersList(filters?: UserFilters, enabled: boolean = true) {
+  return useQuery({
+    queryKey: usersKeys.list(filters || {}),
+    queryFn: () => usersService.getUsers(filters),
+    enabled,
+  });
+}
+
+/**
+ * Hook pour récupérer un utilisateur par son ID
+ * @param id - ID de l'utilisateur
+ * @param enabled - Activer/désactiver la requête
+ * @returns Données et états de la requête
+ */
+export function useUser(id: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: usersKeys.detail(id),
+    queryFn: () => usersService.getUserById(id),
+    enabled: !!id && enabled,
+  });
+}
+
+/**
+ * Hook pour la création, la mise à jour et la suppression d'utilisateurs
+ * @returns Fonctions pour la gestion des utilisateurs
+ */
+export function useUserMutations() {
   const queryClient = useQueryClient();
   
-  /**
-   * Récupération de tous les utilisateurs avec filtres optionnels
-   * @param {Object} filters - Filtres optionnels (role, department, etc.)
-   * @returns {Object} Données, états de chargement et erreurs
-   */
-  const { 
-    data, 
-    isLoading, 
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersService.getAll()
-  });
-  
-  /**
-   * Récupération d'un utilisateur par son ID
-   * @param {string} id - ID de l'utilisateur
-   * @returns {Object} Données, états de chargement et erreurs
-   */
-  const useUser = (id: string | null) => {
-    return useQuery({
-      queryKey: ['user', id],
-      queryFn: () => usersService.getById(id as string),
-      enabled: !!id // Ne déclenche la requête que si l'ID est fourni
-    });
-  };
-  
-  // Création d'un utilisateur
-  const createMutation = useMutation({
-    mutationFn: (user: CreateUserDto) => usersService.create(user),
+  // Mutation pour créer un utilisateur
+  const createUserMutation = useMutation({
+    mutationFn: (newUser: CreateUserDto) => usersService.createUser(newUser),
     onSuccess: () => {
-      // Invalider le cache des utilisateurs
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-    }
+      // Invalide toutes les listes d'utilisateurs pour forcer le rechargement
+      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
+    },
   });
   
-  // Mise à jour d'un utilisateur
-  const updateMutation = useMutation({
+  // Mutation pour mettre à jour un utilisateur
+  const updateUserMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) => 
-      usersService.update(id, data),
-    onSuccess: (_, variables) => {
-      // Invalider les requêtes spécifiques
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['user', variables.id] });
-    }
+      usersService.updateUser(id, data),
+    onSuccess: (updatedUser) => {
+      // Mise à jour du cache pour l'utilisateur modifié
+      queryClient.setQueryData(
+        usersKeys.detail(updatedUser.id),
+        updatedUser
+      );
+      // Invalide les listes qui pourraient contenir cet utilisateur
+      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
+    },
   });
   
-  // Suppression d'un utilisateur
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => usersService.delete(id),
-    onSuccess: (_, variables) => {
-      // Invalider les requêtes et supprimer du cache
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.removeQueries({ queryKey: ['user', variables] });
-    }
+  // Mutation pour supprimer un utilisateur
+  const deleteUserMutation = useMutation({
+    mutationFn: (id: string) => usersService.deleteUser(id),
+    onSuccess: (_, id) => {
+      // Supprime l'utilisateur du cache
+      queryClient.removeQueries({ queryKey: usersKeys.detail(id) });
+      // Invalide les listes qui pourraient contenir cet utilisateur
+      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
+    },
   });
   
-  /**
-   * Créer un nouvel utilisateur
-   * @param {CreateUserDto} user - Données de l'utilisateur à créer
-   * @returns {Promise<User>} Utilisateur créé
-   */
-  const createUser = async (user: CreateUserDto): Promise<User> => {
-    return createMutation.mutateAsync(user);
-  };
-
-  /**
-   * Mettre à jour un utilisateur existant
-   * @param {string} id - ID de l'utilisateur
-   * @param {UpdateUserDto} data - Données à mettre à jour
-   * @returns {Promise<User>} Utilisateur mis à jour
-   */
-  const updateUser = async (id: string, data: UpdateUserDto): Promise<User> => {
-    return updateMutation.mutateAsync({ id, data });
-  };
-
-  /**
-   * Supprimer un utilisateur
-   * @param {string} id - ID de l'utilisateur
-   * @returns {Promise<void>}
-   */
-  const deleteUser = async (id: string): Promise<void> => {
-    return deleteMutation.mutateAsync(id);
-  };
-
-  /**
-   * Récupération des utilisateurs filtrés par rôle
-   * @param {string} role - Rôle des utilisateurs à récupérer
-   * @returns {Object} Données, états de chargement et erreurs
-   */
-  const useUsersByRole = (role: string | null) => {
-    return useQuery({
-      queryKey: ['users', 'role', role],
-      queryFn: () => usersService.getAll({ role }),
-      enabled: !!role // Ne déclenche la requête que si le rôle est fourni
-    });
-  };
-
-  /**
-   * Récupération des utilisateurs filtrés par département
-   * @param {string} department - Département des utilisateurs à récupérer
-   * @returns {Object} Données, états de chargement et erreurs
-   */
-  const useUsersByDepartment = (department: string | null) => {
-    return useQuery({
-      queryKey: ['users', 'department', department],
-      queryFn: () => usersService.getAll({ department }),
-      enabled: !!department // Ne déclenche la requête que si le département est fourni
-    });
-  };
-
   return {
-    data,
-    isLoading,
-    error,
-    refetch,
-    useUser,
-    useUsersByRole,
-    useUsersByDepartment,
-    createUser,
-    updateUser,
-    deleteUser,
-    isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending
+    createUser: useCallback(
+      (newUser: CreateUserDto) => createUserMutation.mutateAsync(newUser),
+      [createUserMutation]
+    ),
+    updateUser: useCallback(
+      (id: string, data: UpdateUserDto) => updateUserMutation.mutateAsync({ id, data }),
+      [updateUserMutation]
+    ),
+    deleteUser: useCallback(
+      (id: string) => deleteUserMutation.mutateAsync(id),
+      [deleteUserMutation]
+    ),
+    isCreating: createUserMutation.isPending,
+    isUpdating: updateUserMutation.isPending,
+    isDeleting: deleteUserMutation.isPending,
+    createError: createUserMutation.error,
+    updateError: updateUserMutation.error,
+    deleteError: deleteUserMutation.error,
   };
-};
+}

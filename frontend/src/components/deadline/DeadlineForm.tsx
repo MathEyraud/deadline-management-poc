@@ -1,232 +1,275 @@
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useProjects } from '@/hooks/useProjects';
-import { useDeadlines } from '@/hooks/useDeadlines';
+/**
+ * Composant DeadlineForm
+ * Formulaire pour la création et la modification d'échéances
+ * @module components/deadline/DeadlineForm
+ */
+import React, { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { Input } from '../ui/Input';
-import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
+import { Select } from '../ui/Select';
 import { DatePicker } from '../ui/DatePicker';
+import { 
+  DeadlinePriority, 
+  DeadlineStatus, 
+  DeadlineVisibility, 
+  Deadline,
+  UpdateDeadlineDto,
+  CreateDeadlineDto
+} from '@/types';
+import { useDeadlineMutations } from '@/hooks/useDeadlines';
+import { useProjectsList } from '@/hooks/useProjects';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
- * Formulaire de création/édition d'une échéance
- * @param {Object} props - Propriétés du composant
- * @param {Object} [props.initialData] - Données initiales pour l'édition d'une échéance existante
- * @returns {JSX.Element} Formulaire d'échéance
+ * Options pour le select de priorité
  */
-export const DeadlineForm = ({ initialData }: { initialData?: any }) => {
-  const router = useRouter();
-  const { data: projects } = useProjects();
-  const { createDeadline, updateDeadline } = useDeadlines();
+const priorityOptions = [
+  { value: DeadlinePriority.LOW, label: 'Basse' },
+  { value: DeadlinePriority.MEDIUM, label: 'Moyenne' },
+  { value: DeadlinePriority.HIGH, label: 'Haute' },
+  { value: DeadlinePriority.CRITICAL, label: 'Critique' },
+];
+
+/**
+ * Options pour le select de statut
+ */
+const statusOptions = [
+  { value: DeadlineStatus.NEW, label: 'Nouvelle' },
+  { value: DeadlineStatus.IN_PROGRESS, label: 'En cours' },
+  { value: DeadlineStatus.PENDING, label: 'En attente' },
+  { value: DeadlineStatus.COMPLETED, label: 'Complétée' },
+  { value: DeadlineStatus.CANCELLED, label: 'Annulée' },
+];
+
+/**
+ * Options pour le select de visibilité
+ */
+const visibilityOptions = [
+  { value: DeadlineVisibility.PRIVATE, label: 'Privée' },
+  { value: DeadlineVisibility.TEAM, label: 'Équipe' },
+  { value: DeadlineVisibility.DEPARTMENT, label: 'Département' },
+  { value: DeadlineVisibility.ORGANIZATION, label: 'Organisation' },
+];
+
+/**
+ * Props pour le composant DeadlineForm
+ */
+interface DeadlineFormProps {
+  /** Échéance à modifier (si mode édition) */
+  deadline?: Deadline;
   
-  const [formData, setFormData] = useState(initialData || {
-    title: '',
-    description: '',
-    deadlineDate: new Date(),
-    priority: 'moyenne',
-    status: 'nouvelle',
-    projectId: ''
+  /** Callback appelé après soumission réussie */
+  onSuccess?: () => void;
+  
+  /** Mode du formulaire (création ou édition) */
+  mode?: 'create' | 'edit';
+}
+
+/**
+ * Composant DeadlineForm - Formulaire pour créer ou modifier une échéance
+ * @param props - Propriétés du composant
+ * @returns Composant DeadlineForm
+ */
+export const DeadlineForm = ({ 
+  deadline, 
+  onSuccess, 
+  mode = 'create' 
+}: DeadlineFormProps) => {
+  const { user } = useAuth();
+  const { createDeadline, updateDeadline, isCreating, isUpdating } = useDeadlineMutations();
+  const { data: projects = [] } = useProjectsList();
+  
+  // Initialize form with react-hook-form
+  const { 
+    control, 
+    handleSubmit, 
+    reset, 
+    formState: { errors } 
+  } = useForm({
+    defaultValues: {
+      title: deadline?.title || '',
+      description: deadline?.description || '',
+      deadlineDate: deadline?.deadlineDate ? new Date(deadline.deadlineDate) : new Date(),
+      priority: deadline?.priority || DeadlinePriority.MEDIUM,
+      status: deadline?.status || DeadlineStatus.NEW,
+      visibility: deadline?.visibility || DeadlineVisibility.PRIVATE,
+      projectId: deadline?.projectId || '',
+    },
   });
-  
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when field is modified
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
+
+  // Reset form when deadline changes
+  useEffect(() => {
+    if (deadline) {
+      reset({
+        title: deadline.title,
+        description: deadline.description || '',
+        deadlineDate: new Date(deadline.deadlineDate),
+        priority: deadline.priority,
+        status: deadline.status,
+        visibility: deadline.visibility,
+        projectId: deadline.projectId || '',
       });
     }
-  };
-  
-  const handleDateChange = (date: Date) => {
-    setFormData(prev => ({ ...prev, deadlineDate: date }));
-    
-    // Clear deadline date error
-    if (errors.deadlineDate) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.deadlineDate;
-        return newErrors;
-      });
-    }
-  };
-  
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.title.trim()) {
-      newErrors.title = 'Le titre est requis';
-    }
-    
-    if (!formData.deadlineDate) {
-      newErrors.deadlineDate = 'La date d\'échéance est requise';
-    }
-    
-    if (!formData.projectId) {
-      newErrors.projectId = 'Le projet est requis';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    
+  }, [deadline, reset]);
+
+  // Format project options
+  const projectOptions = [
+    { value: '', label: 'Aucun projet' },
+    ...projects.map(project => ({
+      value: project.id,
+      label: project.name,
+    })),
+  ];
+
+  // Form submission handler
+  const onSubmit = async (data: any) => {
     try {
-      if (initialData) {
-        // Mise à jour d'une échéance existante
-        await updateDeadline(initialData.id, formData);
+      if (mode === 'create') {
+        // Create new deadline
+        await createDeadline({
+          ...data,
+          creatorId: user?.id || '',
+        } as CreateDeadlineDto);
       } else {
-        // Création d'une nouvelle échéance
-        await createDeadline(formData);
+        // Update existing deadline
+        await updateDeadline(deadline!.id, data as UpdateDeadlineDto);
       }
       
-      // Redirection vers la liste des échéances après succès
-      router.push('/deadlines');
+      // Call success callback
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Reset form in create mode
+      if (mode === 'create') {
+        reset();
+      }
     } catch (error) {
-      console.error('Erreur lors de la soumission du formulaire:', error);
-      // Gérer l'erreur (affichage notification, etc.)
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error submitting deadline:', error);
     }
   };
-  
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-          Titre*
-        </label>
-        <Input
-          id="title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          error={errors.title}
-          placeholder="Titre de l'échéance"
-          required
-        />
-        {errors.title && (
-          <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-        )}
-      </div>
-      
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description
-        </label>
-        <Textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          placeholder="Description détaillée de l'échéance"
-          rows={4}
-        />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="deadlineDate" className="block text-sm font-medium text-gray-700 mb-1">
-            Date d'échéance*
-          </label>
-          <DatePicker
-            id="deadlineDate"
-            name="deadlineDate"
-            selected={formData.deadlineDate}
-            onChange={handleDateChange}
-            error={errors.deadlineDate}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Title field */}
+      <Controller
+        name="title"
+        control={control}
+        rules={{ required: 'Le titre est obligatoire' }}
+        render={({ field }) => (
+          <Input
+            {...field}
+            label="Titre"
+            placeholder="Titre de l'échéance"
+            error={errors.title?.message}
           />
-          {errors.deadlineDate && (
-            <p className="mt-1 text-sm text-red-600">{errors.deadlineDate}</p>
-          )}
-        </div>
-        
-        <div>
-          <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-1">
-            Projet*
-          </label>
-          <Select
-            id="projectId"
-            name="projectId"
-            value={formData.projectId}
-            onChange={handleChange}
-            error={errors.projectId}
-          >
-            <option value="">Sélectionner un projet</option>
-            {projects?.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </Select>
-          {errors.projectId && (
-            <p className="mt-1 text-sm text-red-600">{errors.projectId}</p>
-          )}
-        </div>
-      </div>
+        )}
+      />
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-            Priorité
-          </label>
-          <Select
-            id="priority"
-            name="priority"
-            value={formData.priority}
-            onChange={handleChange}
-          >
-            <option value="basse">Basse</option>
-            <option value="moyenne">Moyenne</option>
-            <option value="haute">Haute</option>
-          </Select>
-        </div>
-        
-        <div>
-          <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-            Statut
-          </label>
-          <Select
-            id="status"
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-          >
-            <option value="nouvelle">Nouvelle</option>
-            <option value="en cours">En cours</option>
-            <option value="en attente">En attente</option>
-            <option value="terminée">Terminée</option>
-            <option value="annulée">Annulée</option>
-          </Select>
-        </div>
-      </div>
+      {/* Description field */}
+      <Controller
+        name="description"
+        control={control}
+        render={({ field }) => (
+          <Textarea
+            {...field}
+            label="Description"
+            placeholder="Description détaillée de l'échéance"
+            error={errors.description?.message}
+          />
+        )}
+      />
       
-      <div className="flex justify-end space-x-3 pt-4">
+      {/* Deadline date field */}
+      <Controller
+        name="deadlineDate"
+        control={control}
+        rules={{ required: 'La date est obligatoire' }}
+        render={({ field: { value, onChange, ...field } }) => (
+          <DatePicker
+            selected={value}
+            onChange={onChange}
+            showTimeSelect
+            label="Date et heure d'échéance"
+            error={errors.deadlineDate?.message}
+            {...field}
+          />
+        )}
+      />
+      
+      {/* Priority field */}
+      <Controller
+        name="priority"
+        control={control}
+        rules={{ required: 'La priorité est obligatoire' }}
+        render={({ field }) => (
+          <Select
+            {...field}
+            label="Priorité"
+            options={priorityOptions}
+            error={errors.priority?.message}
+          />
+        )}
+      />
+      
+      {/* Status field */}
+      <Controller
+        name="status"
+        control={control}
+        rules={{ required: 'Le statut est obligatoire' }}
+        render={({ field }) => (
+          <Select
+            {...field}
+            label="Statut"
+            options={statusOptions}
+            error={errors.status?.message}
+          />
+        )}
+      />
+      
+      {/* Visibility field */}
+      <Controller
+        name="visibility"
+        control={control}
+        rules={{ required: 'La visibilité est obligatoire' }}
+        render={({ field }) => (
+          <Select
+            {...field}
+            label="Visibilité"
+            options={visibilityOptions}
+            error={errors.visibility?.message}
+          />
+        )}
+      />
+      
+      {/* Project field */}
+      <Controller
+        name="projectId"
+        control={control}
+        render={({ field }) => (
+          <Select
+            {...field}
+            label="Projet associé (optionnel)"
+            options={projectOptions}
+            error={errors.projectId?.message}
+          />
+        )}
+      />
+      
+      {/* Submit button */}
+      <div className="flex justify-end">
         <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-          disabled={isSubmitting}
+          type="submit"
+          variant="primary"
+          isLoading={isCreating || isUpdating}
         >
-          Annuler
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Enregistrement...' : initialData ? 'Mettre à jour' : 'Créer'}
+          {mode === 'create' ? 'Créer l\'échéance' : 'Mettre à jour l\'échéance'}
         </Button>
       </div>
     </form>
   );
 };
+
+export default DeadlineForm;

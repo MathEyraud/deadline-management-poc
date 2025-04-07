@@ -1,46 +1,59 @@
-'use client';
+/**
+ * Composant Textarea personnalisé
+ * Champ de saisie multi-lignes avec support d'erreurs et d'états
+ * @module components/ui/Textarea
+ */
+import React, { TextareaHTMLAttributes, forwardRef } from 'react';
+import { cn } from '@/lib/utils';
 
-import React, { forwardRef } from 'react';
-
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  /**
-   * Message d'erreur à afficher
-   */
+/**
+ * Props spécifiques au composant Textarea
+ */
+export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  /** Message d'erreur à afficher sous le textarea */
   error?: string;
+  /** Label à afficher au-dessus du textarea */
+  label?: string;
+  /** Texte d'aide à afficher sous le textarea */
+  helperText?: string;
 }
 
 /**
- * Composant Textarea réutilisable avec gestion des erreurs
- * @param {Object} props - Propriétés du composant
- * @returns {JSX.Element} Composant Textarea
+ * Composant Textarea personnalisé
+ * @param props - Propriétés du textarea
+ * @returns Composant Textarea
  */
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className = '', error, ...props }, ref) => {
-    // Styles de base pour tous les textareas
-    const baseStyles = 'w-full px-3 py-2 border rounded-md text-sm';
-    
-    // Appliquer des styles spécifiques selon qu'il y a une erreur ou non
-    const statusStyles = error
-      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500';
-    
-    // Assembler toutes les classes CSS
-    const textareaStyles = `${baseStyles} ${statusStyles} ${className}`;
-    
+const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, error, label, helperText, ...props }, ref) => {
     return (
-      <div className="w-full">
+      <div className="space-y-1">
+        {label && (
+          <label
+            className="block text-sm font-medium text-slate-700"
+            htmlFor={props.id}
+          >
+            {label}
+          </label>
+        )}
         <textarea
+          className={cn(
+            "flex min-h-[80px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            error && "border-red-500 focus:ring-red-500",
+            className
+          )}
           ref={ref}
-          className={textareaStyles}
           {...props}
         />
-        {error && (
-          <p className="mt-1 text-sm text-red-600">{error}</p>
+        {(error || helperText) && (
+          <p className={`text-sm ${error ? 'text-red-500' : 'text-slate-500'}`}>
+            {error || helperText}
+          </p>
         )}
       </div>
     );
   }
 );
 
-// Définir un nom d'affichage pour les DevTools React
-Textarea.displayName = 'Textarea';
+Textarea.displayName = "Textarea";
+
+export { Textarea };

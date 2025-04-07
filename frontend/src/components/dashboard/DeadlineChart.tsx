@@ -1,165 +1,181 @@
-'use client';
-
-import React, { useMemo } from 'react';
-import { useDeadlines } from '@/hooks/useDeadlines';
+/**
+ * Composant DeadlineChart
+ * Diagramme pour visualiser les statistiques des échéances
+ * @module components/dashboard/DeadlineChart
+ */
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { 
   BarChart, 
   Bar, 
   XAxis, 
   YAxis, 
+  CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  PieChart, 
-  Pie, 
-  Cell, 
-  Legend 
+  PieChart,
+  Pie,
+  Cell,
+  Legend
 } from 'recharts';
-import { Deadline, DeadlinePriority, DeadlineStatus } from '@/types';
+import { useDeadlinesList } from '@/hooks/useDeadlines';
+import { DeadlinePriority, DeadlineStatus } from '@/types';
 
+/**
+ * Props pour le composant DeadlineChart
+ */
 interface DeadlineChartProps {
-  type: 'priority' | 'status';
+  /** Type de graphique à afficher (statut ou priorité) */
+  type?: 'status' | 'priority';
+  /** Format du graphique (bar ou pie) */
+  chartType?: 'bar' | 'pie';
+  /** Titre du graphique */
+  title?: string;
 }
 
 /**
- * Composant de visualisation graphique des échéances par priorité ou statut
- * @param {Object} props - Propriétés du composant
- * @param {'priority' | 'status'} props.type - Type de graphique à afficher
- * @returns {JSX.Element} Graphique des échéances
+ * Couleurs pour les différents statuts
  */
-export const DeadlineChart: React.FC<DeadlineChartProps> = ({ type }) => {
-  const { data: deadlines, isLoading } = useDeadlines({});
+const STATUS_COLORS = {
+  [DeadlineStatus.NEW]: '#3b82f6',
+  [DeadlineStatus.IN_PROGRESS]: '#f59e0b',
+  [DeadlineStatus.PENDING]: '#6366f1',
+  [DeadlineStatus.COMPLETED]: '#10b981',
+  [DeadlineStatus.CANCELLED]: '#ef4444',
+};
+
+/**
+ * Couleurs pour les différentes priorités
+ */
+const PRIORITY_COLORS = {
+  [DeadlinePriority.CRITICAL]: '#ef4444',
+  [DeadlinePriority.HIGH]: '#f59e0b',
+  [DeadlinePriority.MEDIUM]: '#3b82f6',
+  [DeadlinePriority.LOW]: '#6b7280',
+};
+
+/**
+ * Composant DeadlineChart - Graphique des statistiques d'échéances
+ * @param props - Propriétés du composant
+ * @returns Composant DeadlineChart
+ */
+export const DeadlineChart = ({
+  type = 'status',
+  chartType = 'bar',
+  title = 'Statistiques des échéances',
+}: DeadlineChartProps) => {
+  // Récupérer toutes les échéances
+  const { data: deadlines = [], isLoading } = useDeadlinesList();
   
-  // Couleurs pour les différentes priorités ou statuts
-  const COLORS = {
-    priority: {
-      [DeadlinePriority.CRITICAL]: '#dc2626', // rouge vif
-      [DeadlinePriority.HIGH]: '#ef4444',     // rouge
-      [DeadlinePriority.MEDIUM]: '#f59e0b',   // orange/jaune
-      [DeadlinePriority.LOW]: '#10b981',      // vert
-    },
-    status: {
-      [DeadlineStatus.NEW]: '#3b82f6',        // bleu
-      [DeadlineStatus.IN_PROGRESS]: '#8b5cf6', // violet
-      [DeadlineStatus.PENDING]: '#f59e0b',     // orange
-      [DeadlineStatus.COMPLETED]: '#10b981',   // vert
-      [DeadlineStatus.CANCELLED]: '#6b7280',   // gris
+  // Fonction pour préparer les données selon le type
+  const prepareChartData = () => {
+    if (type === 'status') {
+      // Compter les échéances par statut
+      const statusCounts: Record<string, number> = {
+        [DeadlineStatus.NEW]: 0,
+        [DeadlineStatus.IN_PROGRESS]: 0,
+        [DeadlineStatus.PENDING]: 0,
+        [DeadlineStatus.COMPLETED]: 0,
+        [DeadlineStatus.CANCELLED]: 0,
+      };
+      
+      deadlines.forEach(deadline => {
+        if (statusCounts[deadline.status] !== undefined) {
+          statusCounts[deadline.status]++;
+        }
+      });
+      
+      return Object.entries(statusCounts).map(([status, count]) => ({
+        name: status,
+        value: count,
+        color: STATUS_COLORS[status as DeadlineStatus],
+      }));
+    } else {
+      // Compter les échéances par priorité
+      const priorityCounts: Record<string, number> = {
+        [DeadlinePriority.CRITICAL]: 0,
+        [DeadlinePriority.HIGH]: 0,
+        [DeadlinePriority.MEDIUM]: 0,
+        [DeadlinePriority.LOW]: 0,
+      };
+      
+      deadlines.forEach(deadline => {
+        if (priorityCounts[deadline.priority] !== undefined) {
+          priorityCounts[deadline.priority]++;
+        }
+      });
+      
+      return Object.entries(priorityCounts).map(([priority, count]) => ({
+        name: priority,
+        value: count,
+        color: PRIORITY_COLORS[priority as DeadlinePriority],
+      }));
     }
   };
   
-  // Préparation des données pour le graphique
-  const chartData = useMemo(() => {
-    if (!deadlines || deadlines.length === 0) return [];
-    
-    if (type === 'priority') {
-      const priorityCounts: Record<string, number> = {};
-      
-      // Initialiser toutes les priorités à 0
-      Object.values(DeadlinePriority).forEach(priority => {
-        priorityCounts[priority] = 0;
-      });
-      
-      // Comptage des échéances par priorité
-      deadlines.forEach((deadline: Deadline) => {
-        const priority = deadline.priority;
-        priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
-      });
-      
-      return Object.entries(priorityCounts)
-        .filter(([_, count]) => count > 0) // Filtrer les priorités sans échéances
-        .map(([name, value]) => ({
-          name: name.charAt(0).toUpperCase() + name.slice(1), // Capitaliser
-          value
-        }));
-    } else { // status
-      const statusCounts: Record<string, number> = {};
-      
-      // Initialiser tous les statuts à 0
-      Object.values(DeadlineStatus).forEach(status => {
-        statusCounts[status] = 0;
-      });
-      
-      // Comptage des échéances par statut
-      deadlines.forEach((deadline: Deadline) => {
-        const status = deadline.status;
-        statusCounts[status] = (statusCounts[status] || 0) + 1;
-      });
-      
-      return Object.entries(statusCounts)
-        .filter(([_, count]) => count > 0) // Filtrer les statuts sans échéances
-        .map(([name, value]) => ({
-          name: name.charAt(0).toUpperCase() + name.slice(1), // Capitaliser
-          value
-        }));
-    }
-  }, [deadlines, type]);
+  const chartData = prepareChartData();
   
-  if (isLoading) {
-    return (
-      <div className="bg-white p-4 rounded-lg shadow h-80 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-  
-  if (chartData.length === 0) {
-    return (
-      <div className="bg-white p-4 rounded-lg shadow h-80 flex items-center justify-center">
-        <p className="text-gray-500">Aucune donnée disponible</p>
-      </div>
-    );
-  }
-  
-  // Affiche un graphique en camembert pour les priorités, en barres pour les statuts
   return (
-    <div className="bg-white p-4 rounded-lg shadow">
-      <h3 className="font-medium text-lg mb-4">
-        {type === 'priority' ? 'Répartition par priorité' : 'Répartition par statut'}
-      </h3>
-      
-      <div className="h-64">
-        {type === 'priority' ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={COLORS.priority[entry.name.toLowerCase() as keyof typeof COLORS.priority] || '#8884d8'} 
-                  />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => [`${value} échéance(s)`, '']} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="h-64 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : deadlines.length === 0 ? (
+          <div className="h-64 flex items-center justify-center text-slate-500">
+            Aucune donnée disponible
+          </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
-              <Tooltip formatter={(value) => [`${value} échéance(s)`, '']} />
-              <Legend />
-              <Bar dataKey="value" name="Nombre d'échéances">
-                {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={COLORS.status[entry.name.toLowerCase() as keyof typeof COLORS.status] || '#8884d8'} 
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              {chartType === 'bar' ? (
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value) => [`${value} échéances`, '']}
+                    labelFormatter={(name) => `${name}`}
                   />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+                  <Bar dataKey="value" name="Nombre d'échéances">
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              ) : (
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value) => [`${value} échéances`, '']}
+                    labelFormatter={(name) => `${name}`}
+                  />
+                  <Legend />
+                </PieChart>
+              )}
+            </ResponsiveContainer>
+          </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
+
+export default DeadlineChart;

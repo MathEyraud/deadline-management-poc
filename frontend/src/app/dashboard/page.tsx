@@ -1,45 +1,78 @@
+/**
+ * Page du tableau de bord
+ * Affiche les statistiques et les échéances à venir
+ * @module app/dashboard/page
+ */
 'use client';
 
-import { Suspense } from 'react';
+import React from 'react';
+import { Clock } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { DeadlineMetrics } from '@/components/dashboard/DeadlineMetrics';
-import { DeadlineChart } from '@/components/dashboard/DeadlineChart';
-import { DeadlineOverview } from '@/components/dashboard/DeadlineOverview';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Card, CardContent } from '@/components/ui/Card';
+import DeadlineOverview from '@/components/dashboard/DeadlineOverview';
+import DeadlineChart from '@/components/dashboard/DeadlineChart';
+import DeadlineMetrics from '@/components/dashboard/DeadlineMetrics';
+import { useDeadlinesList } from '@/hooks/useDeadlines';
+import { DeadlineStatus } from '@/types';
 
 /**
- * Page principale du tableau de bord
- * @returns {JSX.Element} Page d'accueil avec dashboard
+ * Page Dashboard
+ * Tableau de bord principal de l'application
+ * @returns Page Dashboard
  */
-export default function Home() {
+export default function DashboardPage() {
+  const { data: deadlines = [] } = useDeadlinesList();
+  
+  // Calcul du nombre d'échéances en retard
+  const overdueDeadlines = deadlines.filter(
+    d => new Date(d.deadlineDate) < new Date() && 
+    d.status !== DeadlineStatus.COMPLETED && 
+    d.status !== DeadlineStatus.CANCELLED
+  ).length;
+  
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Tableau de bord" 
-        description="Vue d'ensemble des échéances et des projets"
+    <DashboardLayout>
+      <PageHeader
+        title="Tableau de bord"
+        description="Bienvenue sur votre espace de gestion d'échéances"
       />
       
-      {/* Métriques principales */}
-      <Suspense fallback={<div className="h-20 bg-gray-100 animate-pulse rounded-lg"></div>}>
-        <DeadlineMetrics />
-      </Suspense>
+      {/* Stats Metrics */}
+      <DeadlineMetrics className="mb-6" />
       
-      {/* Graphiques de répartition */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>}>
-          <DeadlineChart type="priority" />
-        </Suspense>
-        <Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>}>
-          <DeadlineChart type="status" />
-        </Suspense>
+        {/* Échéances à venir */}
+        <DeadlineOverview limit={5} />
+        
+        {/* Statistiques */}
+        <div className="space-y-6">
+          <DeadlineChart 
+            type="status" 
+            chartType="pie" 
+            title="Échéances par statut" 
+          />
+          
+          <DeadlineChart 
+            type="priority" 
+            chartType="bar" 
+            title="Échéances par priorité" 
+          />
+        </div>
       </div>
-      
-      {/* Vue d'ensemble des échéances imminentes */}
-      <div>
-        <h2 className="text-xl font-semibold mb-3">Échéances imminentes</h2>
-        <Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>}>
-          <DeadlineOverview limit={5} />
-        </Suspense>
-      </div>
-    </div>
+
+      {overdueDeadlines > 0 && (
+        <Card className="mt-6 bg-red-50 border-red-200">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Clock className="h-5 w-5 text-red-500 mr-2" />
+              <p className="text-red-600">
+                <strong>Attention:</strong> Vous avez {overdueDeadlines} échéance{overdueDeadlines > 1 ? 's' : ''} en retard.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </DashboardLayout>
   );
 }

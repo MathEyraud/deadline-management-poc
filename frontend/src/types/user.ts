@@ -106,6 +106,30 @@ export enum UserRole {
     /** Informations de l'utilisateur connecté */
     user: User;
   }
+
+    /**
+   * Type pour les données d'enregistrement d'un nouvel utilisateur
+   * Similaire à CreateUserDto mais spécifique au processus d'inscription
+   */
+  export interface RegisterData {
+    /** Prénom de l'utilisateur */
+    firstName: string;
+    
+    /** Nom de famille de l'utilisateur */
+    lastName: string;
+    
+    /** Email de l'utilisateur (unique) */
+    email: string;
+    
+    /** Mot de passe en clair (sera haché côté serveur) */
+    password: string;
+    
+    /** Département ou équipe de l'utilisateur (optionnel) */
+    department?: string;
+    
+    /** Rôle de l'utilisateur (optionnel) */
+    role?: UserRole | string;
+  }
   
   // Import des types liés pour éviter les références circulaires
   import { Deadline } from './deadline';

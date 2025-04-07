@@ -1,98 +1,83 @@
-import axios from 'axios';
+/**
+ * Client API principal pour communiquer avec le backend
+ * Ce fichier configure axios avec les paramètres de base et les intercepteurs
+ * @module api/client
+ */
+import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
 /**
- * Client Axios configuré pour communiquer avec l'API backend
- * Inclut la gestion du token d'authentification et des erreurs
+ * URL de base de l'API backend
  */
-const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-  timeout: 10000, // 10 secondes
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-// Intercepteur pour ajouter le token JWT aux requêtes
-api.interceptors.request.use(
-  (config) => {
-    // Ne pas exécuter côté serveur (SSR)
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+/**
+ * Timeout par défaut pour les requêtes en millisecondes (10 secondes)
+ */
+const DEFAULT_TIMEOUT = 10000;
+
+/**
+ * Crée et configure une instance axios pour les requêtes API
+ * @returns Instance axios configurée
+ */
+const createAPIClient = (): AxiosInstance => {
+  // Création de l'instance avec la configuration de base
+  const client = axios.create({
+    baseURL: API_URL,
+    timeout: DEFAULT_TIMEOUT,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  // Intercepteur pour les requêtes
+  client.interceptors.request.use(
+    (config: InternalAxiosRequestConfig) => {
+      // Récupération du token depuis le localStorage (côté client uniquement)
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('token');
+        
+        // Ajout du token d'authentification si disponible
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
+      return config;
+    },
+    (error: AxiosError) => {
+      return Promise.reject(error);
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+  );
 
-// Intercepteur pour gérer les erreurs de réponse
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Gérer les erreurs selon le format standardisé du backend
-    if (error.response) {
-      const { status, data } = error.response;
-      
-      // Si erreur 401 (non authentifié), rediriger vers la page de connexion
-      if (status === 401 && typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // Ne pas rediriger automatiquement pendant les tests ou si on est déjà sur la page de login
-        if (!window.location.pathname.includes('/auth/login')) {
-          window.location.href = '/auth/login';
+  // Intercepteur pour les réponses
+  client.interceptors.response.use(
+    (response: AxiosResponse) => {
+      return response;
+    },
+    (error: AxiosError) => {
+      // Gestion des erreurs 401 (non authentifié)
+      if (error.response?.status === 401) {
+        // Si on est côté client, on redirige vers la page de login
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // Redirection vers la page de login si on n'y est pas déjà
+          if (window.location.pathname !== '/auth/login') {
+            window.location.href = '/auth/login';
+          }
         }
       }
       
-      // Loguer l'erreur avec ses détails
-      console.error(`Erreur API (${status}):`, data.message || data);
-    } else if (error.request) {
-      // La requête a été faite mais pas de réponse
-      console.error('Pas de réponse du serveur:', error.request);
-    } else {
-      // Erreur lors de la configuration de la requête
-      console.error('Erreur de requête:', error.message);
+      return Promise.reject(error);
     }
-    
-    return Promise.reject(error);
-  }
-);
+  );
+
+  return client;
+};
 
 /**
- * Fonction utilitaire pour gérer les erreurs API de façon centralisée
- * @param {Error} error - L'erreur capturée
+ * Instance API partagée pour l'application
  */
-export const handleApiError = (error: any) => {
-  if (error.response) {
-    // Le serveur a répondu avec un code d'erreur
-    const { status, data } = error.response;
-    
-    switch (status) {
-      case 401:
-        // Token expiré ou non authentifié - déjà géré par l'intercepteur
-        break;
-      case 403:
-        // Non autorisé
-        console.error('Accès non autorisé:', data.message);
-        break;
-      case 404:
-        // Ressource non trouvée
-        console.error('Ressource non trouvée:', data.message);
-        break;
-      default:
-        // Autres erreurs
-        console.error(`Erreur ${status}:`, data.message);
-    }
-  } else if (error.request) {
-    // La requête a été faite mais pas de réponse
-    console.error('Pas de réponse du serveur');
-  } else {
-    // Erreur lors de la configuration de la requête
-    console.error('Erreur de requête:', error.message);
-  }
-};
+const api = createAPIClient();
 
 export default api;

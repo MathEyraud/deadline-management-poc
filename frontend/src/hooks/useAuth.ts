@@ -1,105 +1,142 @@
-'use client';
-
+/**
+ * Hook personnalisé pour gérer l'authentification
+ * @module hooks/useAuth
+ */
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { authService } from '@/lib/api';
-import { User, LoginCredentials, CreateUserDto } from '@/types';
+import { useMutation } from '@tanstack/react-query';
+import { authService } from '../lib/api';
+import { LoginCredentials, RegisterData, User, AuthResponse } from '../types';
 
 /**
- * Hook personnalisé pour gérer l'authentification dans l'application
- * @returns {Object} Méthodes et états liés à l'authentification
+ * Interface pour le hook useAuth
  */
-export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export interface UseAuthResult {
+  /** Utilisateur actuellement connecté */
+  user: User | null;
+  
+  /** État de chargement de l'authentification */
+  loading: boolean;
+  
+  /** Erreur d'authentification */
+  error: Error | null;
+  
+  /** Fonction pour se connecter */
+  login: (credentials: LoginCredentials) => Promise<void>;
+  
+  /** Fonction pour s'enregistrer */
+  register: (userData: RegisterData) => Promise<void>;
+  
+  /** Fonction pour se déconnecter */
+  logout: () => void;
+  
+  /** Vérifie si l'utilisateur est authentifié */
+  isAuthenticated: boolean;
+}
+
+/**
+ * Hook personnalisé pour gérer l'authentification
+ * @returns Fonctions et états pour gérer l'authentification
+ */
+export function useAuth(): UseAuthResult {
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Charger l'utilisateur au montage du composant
+  // Charge l'utilisateur au montage du composant
   useEffect(() => {
-    const loadUser = async () => {
-      setIsLoading(true);
+    // Vérifie si on est côté client
+    if (typeof window !== 'undefined') {
+      setLoading(true);
       try {
-        // Vérifier si un token est présent
-        if (authService.isAuthenticated()) {
-          try {
-            // Essayer de récupérer l'utilisateur depuis l'API
-            const userData = await authService.getCurrentUser();
-            setUser(userData);
-          } catch (apiError) {
-            // Si l'API échoue, utiliser les données stockées localement
-            const storedUser = authService.getStoredUser();
-            setUser(storedUser);
-          }
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement de l\'utilisateur:', error);
-        setUser(null);
+        const currentUser = authService.getCurrentUser();
+        const isAuth = authService.isAuthenticated();
+        
+        setUser(currentUser);
+        setIsAuthenticated(isAuth);
+      } catch (err) {
+        console.error('Erreur lors du chargement de l\'utilisateur:', err);
+        setError(err instanceof Error ? err : new Error('Erreur inconnue'));
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
-    };
-
-    loadUser();
+    }
   }, []);
 
-  /**
-   * Connexion utilisateur
-   * @param {LoginCredentials} credentials - Identifiants de connexion
-   * @returns {Promise<Object>} Résultat de connexion
-   */
-  const login = async (credentials: LoginCredentials) => {
-    setIsLoading(true);
-    try {
-      const response = await authService.login(credentials);
-      setUser(response.user);
-      return { success: true, data: response };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Erreur de connexion'
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Mutation pour la connexion
+  const loginMutation = useMutation<AuthResponse, Error, LoginCredentials>({
+    mutationFn: (credentials) => authService.login(credentials),
+    onSuccess: (data) => {
+      setUser(data.user);
+      setIsAuthenticated(true);
+      setError(null);
+      router.push('/dashboard');
+    },
+    onError: (err) => {
+      setError(err);
+      setIsAuthenticated(false);
+    },
+  });
+
+  // Mutation pour l'enregistrement
+  const registerMutation = useMutation<User, Error, RegisterData>({
+    mutationFn: (userData) => authService.register(userData),
+    onSuccess: () => {
+      setError(null);
+      router.push('/auth/login?registered=true');
+    },
+    onError: (err) => {
+      setError(err);
+    },
+  });
 
   /**
-   * Inscription utilisateur
-   * @param {CreateUserDto} userData - Données du nouvel utilisateur
-   * @returns {Promise<Object>} Résultat de l'inscription
+   * Connexion d'un utilisateur
+   * @param credentials - Identifiants de connexion
    */
-  const register = async (userData: CreateUserDto) => {
-    setIsLoading(true);
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    setLoading(true);
     try {
-      const user = await authService.register(userData);
-      return { success: true, data: user };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Erreur lors de l\'inscription'
-      };
+      await loginMutation.mutateAsync(credentials);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, [loginMutation]);
 
   /**
-   * Déconnexion utilisateur
+   * Enregistrement d'un nouvel utilisateur
+   * @param userData - Données du nouvel utilisateur
+   */
+  const register = useCallback(async (userData: RegisterData) => {
+    setLoading(true);
+    try {
+      await registerMutation.mutateAsync(userData);
+    } finally {
+      setLoading(false);
+    }
+  }, [registerMutation]);
+
+  /**
+   * Déconnexion de l'utilisateur
    */
   const logout = useCallback(() => {
     authService.logout();
     setUser(null);
+    setIsAuthenticated(false);
     router.push('/auth/login');
   }, [router]);
 
   return {
     user,
-    isLoading,
-    isAuthenticated: !!user,
+    loading,
+    error,
     login,
+    register,
     logout,
-    register
+    isAuthenticated,
   };
-};
+}
+
+export default useAuth;

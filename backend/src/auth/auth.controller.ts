@@ -6,6 +6,7 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { IsEmail, IsString } from 'class-validator';
 
 /**
  * DTO pour la demande de connexion
@@ -14,11 +15,13 @@ class LoginDto {
   /**
    * Email de l'utilisateur
    */
+  @IsEmail() // Validation pour vérifier si l'email est valide
   email: string;
   
   /**
    * Mot de passe de l'utilisateur
    */
+  @IsString() // Validation pour vérifier si le mot de passe est une chaîne
   password: string;
 }
 
@@ -98,6 +101,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Connexion réussie', type: AuthResponseDto })
   @ApiResponse({ status: 401, description: 'Identifiants invalides' })
   async login(@Body() loginDto: LoginDto) {
+    console.log(loginDto);
     return this.authService.login(loginDto.email, loginDto.password);
   }
 
