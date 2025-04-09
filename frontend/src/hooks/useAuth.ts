@@ -1,12 +1,17 @@
+'use client';
+
 /**
  * Hook personnalisé pour gérer l'authentification
+ * Centralise toute la logique d'authentification pour l'application
+ * Utilise React Query pour la gestion des états et mutations
  * @module hooks/useAuth
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
-import { authService } from '../lib/api';
-import { LoginCredentials, RegisterData, User, AuthResponse } from '../types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { authService } from '@/lib/api';
+import { LoginCredentials, RegisterData, User } from '@/types';
+import { useNotifications } from '@/app/providers';
 
 /**
  * Interface pour le hook useAuth
@@ -40,6 +45,8 @@ export interface UseAuthResult {
  */
 export function useAuth(): UseAuthResult {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { showNotification } = useNotifications();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -66,29 +73,37 @@ export function useAuth(): UseAuthResult {
   }, []);
 
   // Mutation pour la connexion
-  const loginMutation = useMutation<AuthResponse, Error, LoginCredentials>({
-    mutationFn: (credentials) => authService.login(credentials),
+  const loginMutation = useMutation({
+    mutationFn: (credentials: LoginCredentials) => authService.login(credentials),
     onSuccess: (data) => {
       setUser(data.user);
       setIsAuthenticated(true);
       setError(null);
+      showNotification('Connexion réussie', 'success');
+      
+      // Invalider toutes les requêtes qui pourraient dépendre de l'état d'authentification
+      queryClient.invalidateQueries();
+      
       router.push('/dashboard');
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       setError(err);
       setIsAuthenticated(false);
+      showNotification('Échec de la connexion: ' + err.message, 'error');
     },
   });
 
   // Mutation pour l'enregistrement
-  const registerMutation = useMutation<User, Error, RegisterData>({
-    mutationFn: (userData) => authService.register(userData),
+  const registerMutation = useMutation({
+    mutationFn: (userData: RegisterData) => authService.register(userData),
     onSuccess: () => {
       setError(null);
+      showNotification('Compte créé avec succès', 'success');
       router.push('/auth/login?registered=true');
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       setError(err);
+      showNotification('Échec de l\'inscription: ' + err.message, 'error');
     },
   });
 
@@ -125,8 +140,13 @@ export function useAuth(): UseAuthResult {
     authService.logout();
     setUser(null);
     setIsAuthenticated(false);
+    
+    // Supprimer toutes les données en cache lors de la déconnexion
+    queryClient.clear();
+    
+    showNotification('Vous avez été déconnecté', 'info');
     router.push('/auth/login');
-  }, [router]);
+  }, [router, queryClient, showNotification]);
 
   return {
     user,

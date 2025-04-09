@@ -1,6 +1,7 @@
 /**
  * Composant DashboardLayout
- * Layout principal de l'application, intégrant navbar et sidebar
+ * Layout principal de l'application utilisé dans le App Router, intégrant navbar et sidebar
+ * Ce composant encapsule la mise en page commune pour toutes les pages du tableau de bord
  * @module components/layout/DashboardLayout
  */
 import React, { ReactNode, useState, useEffect } from 'react';
@@ -20,6 +21,7 @@ interface DashboardLayoutProps {
 /**
  * Composant DashboardLayout - Structure principale de l'application
  * Inclut la barre de navigation, le sidebar et le contenu principal
+ * Gère également la redirection si l'utilisateur n'est pas authentifié
  * @param props - Propriétés du composant
  * @returns Composant DashboardLayout
  */

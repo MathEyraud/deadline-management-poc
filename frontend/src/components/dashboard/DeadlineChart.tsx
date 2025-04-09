@@ -3,8 +3,10 @@
  * Diagramme pour visualiser les statistiques des échéances
  * @module components/dashboard/DeadlineChart
  */
+'use client';
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { 
   BarChart, 
   Bar, 

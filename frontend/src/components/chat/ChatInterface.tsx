@@ -3,11 +3,11 @@
  * Interface de chat pour interagir avec l'agent IA
  * @module components/chat/ChatInterface
  */
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Trash2 } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Textarea } from '../ui/Textarea';
-import { Card, CardContent } from '../ui/Card';
+import { Card, CardContent, Textarea, Button } from '@/components/ui';
 import { useChat, ChatMessage } from '@/hooks/useChat';
 import { formatDateTime } from '@/lib/utils';
 

@@ -3,13 +3,11 @@
  * Formulaire pour la création et la modification d'échéances
  * @module components/deadline/DeadlineForm
  */
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
-import { Textarea } from '../ui/Textarea';
-import { Select } from '../ui/Select';
-import { DatePicker } from '../ui/DatePicker';
+import { Input, DatePicker, Select, Textarea, Button } from '@/components/ui';
 import { 
   DeadlinePriority, 
   DeadlineStatus, 

@@ -3,14 +3,13 @@
  * Affiche les échéances dans un calendrier interactif
  * @module components/calendar/CalendarView
  */
+'use client';
+
 import React, { useState } from 'react';
-import Calendar, { CalendarProps } from 'react-calendar';
+import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { Deadline, DeadlinePriority } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { Badge } from '../ui/Badge';
-import { Select } from '../ui/Select';
-import Modal from '../ui/Modal';
+import { Card, CardContent, CardHeader, CardTitle, Badge, Select, Modal } from '@/components/ui';
 import DeadlineForm from '../deadline/DeadlineForm';
 import { useDeadlinesList } from '@/hooks/useDeadlines';
 import { formatDate } from '@/lib/utils';

@@ -3,6 +3,8 @@
  * Affiche la barre de navigation supérieure avec logo, titre, et actions utilisateur
  * @module components/layout/Navbar
  */
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { 
@@ -16,7 +18,7 @@ import {
   ListTodoIcon,
   LayoutDashboardIcon
 } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { Button } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 
 /**

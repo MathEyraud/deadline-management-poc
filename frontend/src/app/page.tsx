@@ -1,6 +1,7 @@
 /**
  * Page d'entrée de l'application
- * Redirige vers le tableau de bord ou la page de connexion
+ * Redirige vers le tableau de bord ou la page de connexion en fonction de l'état d'authentification
+ * Point d'entrée principal de l'application
  * @module app/page
  */
 'use client';
@@ -12,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 /**
  * Page d'entrée
  * Redirige automatiquement vers la destination appropriée
- * @returns Page d'entrée
+ * @returns Page d'entrée avec redirection
  */
 export default function HomePage() {
   const router = useRouter();

@@ -1,6 +1,7 @@
 /**
  * Page du tableau de bord
  * Affiche les statistiques et les échéances à venir
+ * Point d'entrée principal après authentification
  * @module app/dashboard/page
  */
 'use client';
@@ -8,8 +9,7 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui';
 import DeadlineOverview from '@/components/dashboard/DeadlineOverview';
 import DeadlineChart from '@/components/dashboard/DeadlineChart';
 import DeadlineMetrics from '@/components/dashboard/DeadlineMetrics';
@@ -32,7 +32,7 @@ export default function DashboardPage() {
   ).length;
   
   return (
-    <DashboardLayout>
+    <>
       <PageHeader
         title="Tableau de bord"
         description="Bienvenue sur votre espace de gestion d'échéances"
@@ -73,6 +73,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
-    </DashboardLayout>
+    </>
   );
 }

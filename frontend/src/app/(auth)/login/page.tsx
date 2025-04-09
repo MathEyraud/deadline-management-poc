@@ -1,19 +1,17 @@
 /**
  * Page de connexion
  * Permet à l'utilisateur de se connecter à l'application
- * @module app/auth/login/page
+ * Située dans un groupe de routes (auth) pour faciliter le partage de layout
+ * @module app/(auth)/login/page
  */
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { LoginCredentials } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/Card';
+import { Button, Input, Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui';
 import { AlertCircle, Check } from 'lucide-react';
 
 /**

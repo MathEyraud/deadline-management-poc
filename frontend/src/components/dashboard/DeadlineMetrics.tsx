@@ -3,8 +3,10 @@
  * Affiche des métriques clés sur les échéances
  * @module components/dashboard/DeadlineMetrics
  */
+'use client';
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { useDeadlinesList } from '@/hooks/useDeadlines';
 import { DeadlineStatus, DeadlinePriority } from '@/types';
 import { Clock, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';

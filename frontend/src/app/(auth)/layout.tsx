@@ -1,10 +1,8 @@
-'use client';
-
 /**
  * Layout pour les pages d'authentification
- * @param {Object} props - Propriétés du composant
- * @param {React.ReactNode} props.children - Contenu des pages
- * @returns {JSX.Element} Layout d'authentification
+ * Fournit une mise en page commune pour les pages de login et d'enregistrement
+ * Utilise un groupe de routes nommé (auth) pour isolation
+ * @module app/(auth)/layout
  */
 export default function AuthLayout({
   children,

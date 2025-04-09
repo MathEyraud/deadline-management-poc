@@ -1,3 +1,9 @@
+/**
+ * Fournisseurs globaux de l'application
+ * Configure React Query et autres contextes pour toute l'application
+ * Point central de gestion des états et contextes globaux
+ * @module app/providers
+ */
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -24,19 +30,22 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 /**
  * Composant qui fournit les contextes globaux à l'application
+ * Inclut React Query et le système de notifications
  * @param {Object} props - Propriétés du composant
  * @param {ReactNode} props.children - Enfants du composant
  * @returns {JSX.Element} Fournisseurs de contexte
  */
 export function Providers({ children }: { children: ReactNode }) {
-  // Création d'une nouvelle instance de QueryClient pour chaque session
+  // Création d'une nouvelle instance de QueryClient avec configuration standardisée
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 5 * 60 * 1000, // 5 minutes
         retry: 1,
-        refetchOnWindowFocus: false
-      }
+        refetchOnWindowFocus: false,
+        refetchOnMount: true,
+        // La gestion d'erreur centralisée sera faite au niveau des hooks individuels
+      },
     }
   }));
 

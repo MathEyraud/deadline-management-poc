@@ -3,12 +3,12 @@
  * Vue d'ensemble des échéances pour le tableau de bord
  * @module components/dashboard/DeadlineOverview
  */
+'use client';
+
 import React from 'react';
 import { Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@/components/ui';
 import { useDeadlinesList } from '@/hooks/useDeadlines';
 import { formatDate, truncateText } from '@/lib/utils';
 import { DeadlinePriority, DeadlineStatus } from '@/types';

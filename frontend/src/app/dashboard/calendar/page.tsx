@@ -1,17 +1,16 @@
 /**
  * Page du calendrier des échéances
  * Affiche un calendrier interactif avec les échéances
- * @module app/calendar/page
+ * Située sous le namespace dashboard pour maintenir la cohérence de navigation
+ * @module app/dashboard/calendar/page
  */
 'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Button } from '@/components/ui/Button';
+import { Button, Modal } from '@/components/ui';
 import { Plus } from 'lucide-react';
 import CalendarView from '@/components/calendar/CalendarView';
-import Modal from '@/components/ui/Modal';
 import DeadlineForm from '@/components/deadline/DeadlineForm';
 import { useDeadlinesList } from '@/hooks/useDeadlines';
 
@@ -25,7 +24,7 @@ export default function CalendarPage() {
   const { refetch } = useDeadlinesList();
   
   return (
-    <DashboardLayout>
+    <>
       <PageHeader
         title="Calendrier"
         description="Visualisez vos échéances dans un calendrier interactif"
@@ -57,6 +56,6 @@ export default function CalendarPage() {
           mode="create"
         />
       </Modal>
-    </DashboardLayout>
+    </>
   );
 }

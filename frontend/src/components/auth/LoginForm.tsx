@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Input, Button } from '@/components/ui';
 
 /**
  * Formulaire de connexion pour l'application
@@ -14,7 +13,7 @@ export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
+  const { login, loading: isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl') || '/';
@@ -29,12 +28,10 @@ export const LoginForm = () => {
     }
     
     try {
-      const result = await login(email, password);
-      if (result.success) {
-        router.push(callbackUrl);
-      } else {
-        setError(result.error || 'Identifiants incorrects');
-      }
+      // Pass a credentials object instead of separate parameters
+      await login({ email, password });
+      // Redirect will be handled by the useAuth hook itself
+      // No need to check success property
     } catch (err) {
       setError('Une erreur est survenue lors de la connexion');
       console.error(err);

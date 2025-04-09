@@ -1,12 +1,29 @@
+/**
+ * Composant ChatMessage
+ * Affiche un message individuel dans l'interface de chat
+ * @module components/chat/ChatMessage
+ */
 import { forwardRef } from 'react';
 
-interface Message {
+/**
+ * Interface pour un message de chat
+ */
+export interface Message {
+  /** Contenu du message */
   content: string;
+  
+  /** Origine du message (utilisateur ou IA) */
   sender: 'user' | 'ai';
+  
+  /** Horodatage du message */
   timestamp: Date;
 }
 
+/**
+ * Props pour le composant ChatMessage
+ */
 interface ChatMessageProps {
+  /** Message à afficher */
   message: Message;
 }
 
@@ -14,6 +31,7 @@ interface ChatMessageProps {
  * Composant pour afficher un message individuel dans l'interface de chat
  * @param {Object} props - Propriétés du composant
  * @param {Message} props.message - Message à afficher
+ * @param {React.Ref<HTMLDivElement>} ref - Référence React
  * @returns {JSX.Element} Message de chat formaté
  */
 export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
@@ -48,3 +66,6 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     );
   }
 );
+
+// Ajout du displayName manquant
+ChatMessage.displayName = 'ChatMessage';

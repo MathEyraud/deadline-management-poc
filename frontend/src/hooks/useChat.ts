@@ -1,11 +1,13 @@
 /**
  * Hook personnalisé pour gérer les interactions avec l'agent IA
+ * Centralise la logique de conversation avec l'agent IA
  * @module hooks/useChat
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, RefObject } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { aiService } from '../lib/api';
 import { AIQuery, AIResponse } from '../types';
+import { useNotifications } from '@/app/providers';
 
 /**
  * Type pour un message de chat
@@ -25,15 +27,47 @@ export interface ChatMessage {
 }
 
 /**
+ * Interface pour les résultats du hook useChat
+ */
+export interface UseChatResult {
+  /** Liste des messages de la conversation */
+  messages: ChatMessage[];
+  
+  /** Indique si une requête est en cours */
+  isLoading: boolean;
+  
+  /** Erreur éventuelle */
+  error: Error | null;
+  
+  /** Fonction pour envoyer un message */
+  sendMessage: (content: string) => Promise<void>;
+  
+  /** Fonction pour effacer l'historique des messages */
+  clearMessages: () => void;
+  
+  /** Référence au dernier message - peut être null */
+  lastMessageRef: RefObject<HTMLDivElement | null>;
+}
+
+/**
  * Hook personnalisé pour gérer les conversations avec l'agent IA
  * @returns Fonctions et états pour gérer la conversation
  */
-export function useChat() {
+export function useChat(): UseChatResult {
   // État pour stocker l'historique des messages
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   
   // État pour suivre si une requête est en cours
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // État pour stocker l'erreur
+  const [error, setError] = useState<Error | null>(null);
+  
+  // Référence pour le scroll automatique - corrigé le type
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+  
+  // Système de notifications
+  const { showNotification } = useNotifications();
   
   // Mutation pour envoyer une requête à l'IA
   const aiMutation = useMutation({
@@ -49,8 +83,9 @@ export function useChat() {
       
       setMessages(prev => [...prev, assistantMessage]);
       setIsLoading(false);
+      setError(null);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Erreur lors de la communication avec l\'IA:', error);
       
       // Ajoute un message d'erreur à l'historique
@@ -63,6 +98,8 @@ export function useChat() {
       
       setMessages(prev => [...prev, errorMessage]);
       setIsLoading(false);
+      setError(error);
+      showNotification('Erreur de communication avec l\'IA', 'error');
     },
   });
   
@@ -93,17 +130,22 @@ export function useChat() {
     }));
     
     // Envoie la requête à l'IA
-    await aiMutation.mutateAsync({
-      query: content,
-      context,
-    });
-  }, [messages, aiMutation]);
+    try {
+      await aiMutation.mutateAsync({
+        query: content,
+        context,
+      });
+    } catch (err) {
+      // Gestion des erreurs spécifiques (déjà gérée par onError)
+    }
+  }, [messages, aiMutation, showNotification]);
   
   /**
    * Efface l'historique des messages
    */
   const clearMessages = useCallback(() => {
     setMessages([]);
+    setError(null);
   }, []);
   
   return {
@@ -111,6 +153,8 @@ export function useChat() {
     sendMessage,
     clearMessages,
     isLoading,
+    error,
+    lastMessageRef,
   };
 }
 
