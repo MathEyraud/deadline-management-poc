@@ -98,7 +98,7 @@ export const DeadlineOverview = ({ limit = 5 }: DeadlineOverviewProps) => {
             {deadlines.map((deadline) => (
               <Link
                 key={deadline.id}
-                href={`/deadlines/${deadline.id}`}
+                href={`/dashboard/deadlines/${deadline.id}`}
                 className="block"
               >
                 <div className="p-3 border border-slate-200 rounded hover:bg-slate-50 transition">

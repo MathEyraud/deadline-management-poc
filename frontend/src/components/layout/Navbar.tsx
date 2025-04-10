@@ -59,14 +59,14 @@ export const Navbar = ({ isSidebarCollapsed }: NavbarProps) => {
                 Tableau de bord
               </Link>
               <Link 
-                href="/deadlines" 
+                href="/dashboard/deadlines" 
                 className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-700 hover:bg-slate-100"
               >
                 <ListTodoIcon className="h-4 w-4 mr-2" />
                 Échéances
               </Link>
               <Link 
-                href="/calendar" 
+                href="/dashboard/calendar" 
                 className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-700 hover:bg-slate-100"
               >
                 <CalendarIcon className="h-4 w-4 mr-2" />
@@ -117,7 +117,7 @@ export const Navbar = ({ isSidebarCollapsed }: NavbarProps) => {
                   </div>
                   
                   <Link 
-                    href="/settings" 
+                    href="/dashboard/settings" 
                     className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 w-full text-left"
                     onClick={() => setIsMenuOpen(false)}
                   >

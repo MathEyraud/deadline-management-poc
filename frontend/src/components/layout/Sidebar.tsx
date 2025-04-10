@@ -1,8 +1,4 @@
-/**
- * Composant Sidebar amélioré
- * Barre latérale de navigation avec fonctionnalité de réduction
- * @module components/layout/Sidebar
- */
+// Modification du composant Sidebar pour corriger les chemins
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,70 +16,57 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
 
-/**
- * Props du composant Sidebar
- */
 interface SidebarProps {
-  /** Indique si la sidebar est en mode réduit (icônes uniquement) */
   isCollapsed: boolean;
-  /** Fonction pour basculer entre le mode complet et le mode réduit */
   onToggleCollapse: () => void;
 }
 
-/**
- * Définition des liens de navigation
- */
-const navigationLinks = [
-  {
-    title: 'Tableau de bord',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'Échéances',
-    href: '/deadlines',
-    icon: ListTodo,
-  },
-  {
-    title: 'Calendrier',
-    href: '/calendar',
-    icon: Calendar,
-  },
-  {
-    title: 'Projets',
-    href: '/projects',
-    icon: FolderKanban,
-  },
-  {
-    title: 'Équipes',
-    href: '/teams',
-    icon: Users,
-  },
-  {
-    title: 'Chat IA',
-    href: '/chat',
-    icon: MessageSquareText,
-  },
-  {
-    title: 'Rapports',
-    href: '/reports',
-    icon: BarChart2,
-  },
-];
-
-/**
- * Composant Sidebar - Barre latérale de navigation
- * Supporte un mode réduit (icônes uniquement)
- * @param props - Propriétés du composant
- * @returns Composant Sidebar
- */
 export const Sidebar = ({ isCollapsed, onToggleCollapse }: SidebarProps) => {
   const pathname = usePathname();
+
+  // Définition des liens de navigation
+  const navigationLinks = [
+    {
+      title: 'Tableau de bord',
+      href: '/dashboard',
+      icon: LayoutDashboard,
+    },
+    {
+      title: 'Échéances',
+      href: '/dashboard/deadlines',
+      icon: ListTodo,
+    },
+    {
+      title: 'Calendrier',
+      href: '/dashboard/calendar',
+      icon: Calendar,
+    },
+    {
+      title: 'Projets',
+      href: '/dashboard/projects',
+      icon: FolderKanban,
+    },
+    {
+      title: 'Équipes',
+      href: '/dashboard/teams',
+      icon: Users,
+    },
+    {
+      title: 'Chat IA',
+      href: '/dashboard/chat',
+      icon: MessageSquareText,
+    },
+    {
+      title: 'Rapports',
+      href: '/dashboard/reports',
+      icon: BarChart2,
+    },
+  ];
 
   // Déterminer si un lien est actif
   const isLinkActive = (href: string) => {
     if (!pathname) {
-      return false; // Si pathname est null, retourne false
+      return false;
     }
     
     // Exact match pour la page d'accueil
@@ -145,10 +128,10 @@ export const Sidebar = ({ isCollapsed, onToggleCollapse }: SidebarProps) => {
 
         <div className={cn("pt-4 border-t border-slate-200", isCollapsed ? "flex justify-center" : "")}>
           <Link
-            href="/settings"
+            href="/dashboard/settings"
             className={cn(
               "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-100",
-              pathname === '/settings' 
+              pathname === '/dashboard/settings' 
                 ? "bg-slate-100 text-blue-600" 
                 : "text-slate-700",
               isCollapsed ? "justify-center" : ""
