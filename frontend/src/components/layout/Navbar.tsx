@@ -8,7 +8,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { 
-  Menu, 
   BellIcon, 
   UserCircle, 
   LogOut, 
@@ -25,10 +24,8 @@ import { useAuth } from '@/hooks/useAuth';
  * Props du composant Navbar
  */
 interface NavbarProps {
-  /** Fonction pour ouvrir/fermer le sidebar */
-  toggleSidebar?: () => void;
-  /** Indique si le sidebar est ouvert */
-  isSidebarOpen?: boolean;
+  /** Indique si le sidebar est en mode réduit (icônes uniquement) */
+  isSidebarCollapsed?: boolean;
 }
 
 /**
@@ -36,7 +33,7 @@ interface NavbarProps {
  * @param props - Propriétés du composant
  * @returns Composant Navbar
  */
-export const Navbar = ({ toggleSidebar, isSidebarOpen }: NavbarProps) => {
+export const Navbar = ({ isSidebarCollapsed }: NavbarProps) => {
   const { user, logout } = useAuth();
   
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -45,19 +42,8 @@ export const Navbar = ({ toggleSidebar, isSidebarOpen }: NavbarProps) => {
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
       <div className="mx-auto px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between">
-          {/* Section gauche - Logo et bouton du menu */}
+          {/* Section gauche - Logo et titre */}
           <div className="flex items-center">
-            {/* Bouton pour le menu latéral (visible sur mobile/tablette) */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="mr-2 lg:hidden"
-              aria-label={isSidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
-              onClick={toggleSidebar}
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-            
             {/* Logo et titre */}
             <Link href="/dashboard" className="flex items-center">
               <span className="text-slate-900 font-bold text-xl">DeadlineManager</span>

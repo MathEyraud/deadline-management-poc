@@ -1,6 +1,6 @@
 /**
- * Composant Sidebar
- * Barre latérale de navigation avec liens vers les différentes sections
+ * Composant Sidebar amélioré
+ * Barre latérale de navigation avec fonctionnalité de réduction
  * @module components/layout/Sidebar
  */
 import React from 'react';
@@ -14,18 +14,20 @@ import {
   FolderKanban, 
   MessageSquareText,
   Settings,
-  BarChart2
+  BarChart2,
+  ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui';
 
 /**
  * Props du composant Sidebar
  */
 interface SidebarProps {
-  /** Indique si la sidebar est ouverte */
-  isOpen: boolean;
-  /** Fonction pour fermer la sidebar */
-  onClose: () => void;
+  /** Indique si la sidebar est en mode réduit (icônes uniquement) */
+  isCollapsed: boolean;
+  /** Fonction pour basculer entre le mode complet et le mode réduit */
+  onToggleCollapse: () => void;
 }
 
 /**
@@ -71,10 +73,11 @@ const navigationLinks = [
 
 /**
  * Composant Sidebar - Barre latérale de navigation
+ * Supporte un mode réduit (icônes uniquement)
  * @param props - Propriétés du composant
  * @returns Composant Sidebar
  */
-export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
+export const Sidebar = ({ isCollapsed, onToggleCollapse }: SidebarProps) => {
   const pathname = usePathname();
 
   // Déterminer si un lien est actif
@@ -92,90 +95,84 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     return pathname.startsWith(href) && href !== '/dashboard';
   };
 
-  // Handle click outside on mobile to close sidebar
-  React.useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      // Check if click is outside sidebar and sidebar is open on mobile
-      if (isOpen && window.innerWidth < 1024 && !target.closest('#sidebar')) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
-  }, [isOpen, onClose]);
+  // Détermine la largeur de la sidebar en fonction de son état
+  const sidebarWidth = isCollapsed ? 'w-16' : 'w-64';
 
   return (
-    <>
-      {/* Overlay on mobile */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 lg:hidden z-20"
-          onClick={onClose}
-          aria-hidden="true"
-        />
+    <aside
+      id="sidebar"
+      className={cn(
+        `h-screen ${sidebarWidth} bg-white border-r border-slate-200 pt-16 
+         transition-all duration-300 ease-in-out flex flex-col sticky top-0 left-0`
       )}
+    >
+      {/* Bouton pour réduire/étendre la sidebar (en bas à droite) */}
+      <div className="absolute right-2 top-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggleCollapse}
+          className="p-1"
+          aria-label={isCollapsed ? "Étendre le menu" : "Réduire le menu"}
+        >
+          <ChevronLeft className={cn(
+            "h-5 w-5 text-slate-500 transition-transform duration-300",
+            isCollapsed && "rotate-180"
+          )} />
+        </Button>
+      </div>
 
-      {/* Sidebar */}
-      <aside
-        id="sidebar"
-        className={cn(
-          "fixed top-0 left-0 h-full w-64 bg-white border-r border-slate-200 pt-16 z-10 transition-transform duration-300 ease-in-out transform lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="p-4 space-y-4">
-          <div className="space-y-1">
-            {navigationLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-100",
-                  isLinkActive(link.href) 
-                    ? "bg-slate-100 text-blue-600" 
-                    : "text-slate-700"
-                )}
-                onClick={() => {
-                  if (window.innerWidth < 1024) {
-                    onClose();
-                  }
-                }}
-              >
-                <link.icon className="h-5 w-5 mr-3" />
-                {link.title}
-              </Link>
-            ))}
-          </div>
-
-          <div className="pt-4 border-t border-slate-200">
+      <div className="p-4 space-y-4 overflow-y-auto flex-grow">
+        <div className="space-y-1">
+          {navigationLinks.map((link) => (
             <Link
-              href="/settings"
+              key={link.href}
+              href={link.href}
               className={cn(
                 "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-100",
-                pathname === '/settings' 
+                isLinkActive(link.href) 
                   ? "bg-slate-100 text-blue-600" 
-                  : "text-slate-700"
+                  : "text-slate-700",
+                isCollapsed ? "justify-center" : ""
               )}
+              title={isCollapsed ? link.title : undefined}
             >
-              <Settings className="h-5 w-5 mr-3" />
-              Paramètres
+              <link.icon className={cn("h-5 w-5", isCollapsed ? "" : "mr-3")} />
+              {!isCollapsed && <span>{link.title}</span>}
             </Link>
-          </div>
-
-          {/* Footer with app version */}
-          <div className="absolute bottom-0 left-0 w-full p-4 border-t border-slate-200">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">v1.0.0</span>
-              <span className="text-xs text-slate-500">DeadlineManager</span>
-            </div>
-          </div>
+          ))}
         </div>
-      </aside>
-    </>
+
+        <div className={cn("pt-4 border-t border-slate-200", isCollapsed ? "flex justify-center" : "")}>
+          <Link
+            href="/settings"
+            className={cn(
+              "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-100",
+              pathname === '/settings' 
+                ? "bg-slate-100 text-blue-600" 
+                : "text-slate-700",
+              isCollapsed ? "justify-center" : ""
+            )}
+            title={isCollapsed ? "Paramètres" : undefined}
+          >
+            <Settings className={cn("h-5 w-5", isCollapsed ? "" : "mr-3")} />
+            {!isCollapsed && <span>Paramètres</span>}
+          </Link>
+        </div>
+      </div>
+
+      {/* Footer with app version */}
+      <div className="p-4 border-t border-slate-200 bg-white">
+        <div className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-between")}>
+          {!isCollapsed && <span className="text-xs text-slate-500">v1.0.0</span>}
+          {isCollapsed ? (
+            <span className="text-xs text-slate-500">v1.0</span>
+          ) : (
+            <span className="text-xs text-slate-500">DeadlineManager</span>
+          )}
+        </div>
+      </div>
+    </aside>
   );
 };
 

@@ -1,7 +1,6 @@
 /**
  * Composant DashboardLayout
  * Layout principal de l'application utilisé dans le App Router, intégrant navbar et sidebar
- * Ce composant encapsule la mise en page commune pour toutes les pages du tableau de bord
  * @module components/layout/DashboardLayout
  */
 import React, { ReactNode, useState, useEffect } from 'react';
@@ -21,12 +20,11 @@ interface DashboardLayoutProps {
 /**
  * Composant DashboardLayout - Structure principale de l'application
  * Inclut la barre de navigation, le sidebar et le contenu principal
- * Gère également la redirection si l'utilisateur n'est pas authentifié
  * @param props - Propriétés du composant
  * @returns Composant DashboardLayout
  */
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
@@ -36,6 +34,26 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       router.push('/auth/login');
     }
   }, [isAuthenticated, loading, router]);
+
+  // Conserver la préférence de l'utilisateur dans le localStorage
+  useEffect(() => {
+    // Récupérer la préférence lors du chargement
+    if (typeof window !== 'undefined') {
+      const savedState = localStorage.getItem('sidebarCollapsed');
+      if (savedState !== null) {
+        setSidebarCollapsed(savedState === 'true');
+      }
+    }
+  }, []);
+
+  // Gestionnaire pour basculer l'état de collapse et sauvegarder la préférence
+  const toggleSidebarCollapse = () => {
+    const newState = !sidebarCollapsed;
+    setSidebarCollapsed(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebarCollapsed', String(newState));
+    }
+  };
 
   // Ne rien afficher pendant le chargement
   if (loading) {
@@ -55,17 +73,14 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
       <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapse}
       />
       
       {/* Contenu principal */}
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 min-h-screen">
         {/* Navbar */}
-        <Navbar 
-          toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-          isSidebarOpen={sidebarOpen} 
-        />
+        <Navbar isSidebarCollapsed={sidebarCollapsed} />
         
         {/* Contenu de la page */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">

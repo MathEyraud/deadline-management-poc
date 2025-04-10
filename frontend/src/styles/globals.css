@@ -57,3 +57,11 @@
 .loading-spinner {
   @apply animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600;
 }
+
+@layer utilities {
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+}
