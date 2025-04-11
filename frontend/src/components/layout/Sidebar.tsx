@@ -53,7 +53,7 @@ export const Sidebar = ({ isCollapsed, onToggleCollapse }: SidebarProps) => {
     },
     {
       title: 'Chat IA',
-      href: '/dashboard/chat',
+      href: '/chat',
       icon: MessageSquareText,
     },
     {

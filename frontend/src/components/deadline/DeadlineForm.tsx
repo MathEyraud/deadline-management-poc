@@ -63,7 +63,11 @@ interface DeadlineFormProps {
   
   /** Mode du formulaire (création ou édition) */
   mode?: 'create' | 'edit';
+  
+  /** ID du projet initial (optionnel, pour la création depuis un projet) */
+  initialProjectId?: string;
 }
+
 
 /**
  * Composant DeadlineForm - Formulaire pour créer ou modifier une échéance
@@ -73,7 +77,8 @@ interface DeadlineFormProps {
 export const DeadlineForm = ({ 
   deadline, 
   onSuccess, 
-  mode = 'create' 
+  mode = 'create',
+  initialProjectId
 }: DeadlineFormProps) => {
   const { user } = useAuth();
   const { createDeadline, updateDeadline, isCreating, isUpdating } = useDeadlineMutations();
@@ -93,7 +98,7 @@ export const DeadlineForm = ({
       priority: deadline?.priority || DeadlinePriority.MEDIUM,
       status: deadline?.status || DeadlineStatus.NEW,
       visibility: deadline?.visibility || DeadlineVisibility.PRIVATE,
-      projectId: deadline?.projectId || '',
+      projectId: deadline?.projectId || initialProjectId || '',
     },
   });
 
@@ -107,10 +112,16 @@ export const DeadlineForm = ({
         priority: deadline.priority,
         status: deadline.status,
         visibility: deadline.visibility,
-        projectId: deadline.projectId || '',
+        projectId: deadline.projectId || initialProjectId || '',
       });
+    } else if (initialProjectId) {
+      // Si on initialise avec un projectId (création depuis un projet)
+      reset(prev => ({
+        ...prev,
+        projectId: initialProjectId
+      }));
     }
-  }, [deadline, reset]);
+  }, [deadline, initialProjectId, reset]);
 
   // Format project options
   const projectOptions = [
