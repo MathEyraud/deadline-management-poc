@@ -11,9 +11,9 @@ import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResp
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 /**
- * Timeout par défaut pour les requêtes en millisecondes (10 secondes)
+ * Timeout par défaut pour les requêtes en millisecondes (60 secondes)
  */
-const DEFAULT_TIMEOUT = 10000;
+const DEFAULT_TIMEOUT = 60000;
 
 /**
  * Crée et configure une instance axios pour les requêtes API

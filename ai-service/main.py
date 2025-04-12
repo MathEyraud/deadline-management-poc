@@ -18,7 +18,7 @@ import logging
 import asyncio
 import time
 from typing import List, Dict, Optional, Any, Union
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Import des bibliothèques externes
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, status
@@ -46,7 +46,7 @@ DEFAULT_MODEL = os.environ.get(
 )
 MODEL_PATH = os.path.join(MODEL_DIR, DEFAULT_MODEL)
 GPU_LAYERS = int(os.environ.get("GPU_LAYERS", "0"))  # Nombre de couches à exécuter sur GPU
-MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "1024"))  # Nombre maximum de tokens générés
+MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "512"))  # Nombre maximum de tokens générés
 TEMPERATURE = float(os.environ.get("TEMPERATURE", "0.7"))  # Température pour la génération
 MAX_CONTEXT_ITEMS = int(os.environ.get("MAX_CONTEXT_ITEMS", "10"))  # Nombre max d'items dans le contexte
 
@@ -137,7 +137,7 @@ class PredictionResponse(BaseModel):
 # Variables globales
 model = None
 model_loading = False
-model_last_used = datetime.now()
+model_last_used = datetime.now(timezone.utc)
 
 # Fonction pour charger le modèle
 async def load_model():
@@ -177,7 +177,7 @@ async def load_model():
         raise e
     
     model_loading = False
-    model_last_used = datetime.now()
+    model_last_used = datetime.now(timezone.utc)
     return model
 
 # Middleware pour vérifier la disponibilité du modèle
@@ -204,10 +204,11 @@ Ton objectif est d'aider l'utilisateur à mieux organiser son travail, à respec
 
     # Ajouter les informations sur les échéances au système s'il y en a
     if deadlines and len(deadlines) > 0:
+        now = datetime.now(timezone.utc)
         system_prompt += "\n\nInformations sur les échéances actuelles:"
         for i, deadline in enumerate(deadlines, 1):
             date_str = deadline.deadlineDate.strftime("%d/%m/%Y %H:%M")
-            days_left = (deadline.deadlineDate - datetime.now()).days
+            days_left = (deadline.deadlineDate - now).days
             status_emoji = "✅" if deadline.status.lower() in ["complétée", "terminée", "completed"] else "⏳"
             priority_emoji = {
                 "critique": "🔴",
@@ -247,9 +248,10 @@ Ton objectif est d'aider l'utilisateur à mieux organiser son travail, à respec
             # Si c'est le premier message user, inclure le système
             if prompt == "":
                 system_content = next((m["content"] for m in messages if m["role"] == "system"), "")
-                prompt += f"<s>[INST] {system_content}\n\n{msg['content']} [/INST]"
+                # Ne pas inclure <s> car llama-cpp l'ajoute automatiquement
+                prompt += f"[INST] {system_content}\n\n{msg['content']} [/INST]"
             else:
-                prompt += f"<s>[INST] {msg['content']} [/INST]"
+                prompt += f"[INST] {msg['content']} [/INST]"
         else:  # assistant
             prompt += f" {msg['content']} </s>"
     
@@ -265,7 +267,7 @@ async def generate_response(prompt: str) -> str:
         await load_model()
     
     # Mettre à jour le timestamp d'utilisation
-    model_last_used = datetime.now()
+    model_last_used = datetime.now(timezone.utc)
     
     # Génération selon le backend
     if BACKEND == "llama_cpp":
@@ -305,10 +307,11 @@ async def generate_response(prompt: str) -> str:
 
 # Tâche de fond pour décharger le modèle après inactivité
 async def unload_model_task():
+    now = datetime.now(timezone.utc)
     global model, model_last_used
     while True:
         await asyncio.sleep(60)  # Vérifier toutes les minutes
-        if model is not None and (datetime.now() - model_last_used) > timedelta(minutes=30):
+        if model is not None and (now - model_last_used) > timedelta(minutes=30):
             logger.info("Déchargement du modèle après 30 minutes d'inactivité")
             model = None
             import gc
@@ -378,11 +381,12 @@ async def predict(request: PredictionRequest):
     et fournir des recommandations.
     """
     start_time = time.time()
+    now = datetime.now(timezone.utc)
     
     try:
         # Formater la demande pour le modèle
         date_str = request.deadline_data.deadlineDate.strftime("%d/%m/%Y %H:%M")
-        days_left = (request.deadline_data.deadlineDate - datetime.now()).days
+        days_left = (request.deadline_data.deadlineDate - now).days
         
         query = f"""Analyse cette échéance et prédit sa probabilité de complétion dans les délais.
         

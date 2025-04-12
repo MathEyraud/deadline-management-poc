@@ -78,7 +78,7 @@ export class AiServiceService {
   async query(userId: string, aiQueryDto: AiQueryDto) {
     try {
       // Récupérer les échéances de l'utilisateur si nécessaire
-      let deadlines: Deadline[] = []; // Typé explicitement comme Deadline[]
+      let deadlines: Deadline[] = [];
       if (aiQueryDto.includeDeadlines) {
         deadlines = await this.deadlinesService.findByUser(userId);
         this.logger.debug(`Récupération de ${deadlines.length} échéances pour l'utilisateur ${userId}`);

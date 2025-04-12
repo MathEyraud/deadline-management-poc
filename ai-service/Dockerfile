@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     MODEL_DIR=/app/models \
     DEFAULT_MODEL=mistral-7b-instruct-v0.2.Q4_K_M.gguf \
     GPU_LAYERS=0 \
-    MAX_TOKENS=1024 \
+    MAX_TOKENS=512 \
     TEMPERATURE=0.7 \
     MAX_CONTEXT_ITEMS=10
 

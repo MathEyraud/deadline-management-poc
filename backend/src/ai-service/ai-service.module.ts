@@ -18,7 +18,7 @@ import { UsersModule } from '../users/users.module';
 @Module({
   imports: [
     HttpModule.register({
-      timeout: 15000, // 15 secondes de timeout
+      timeout: 60000, // 60 secondes de timeout
       maxRedirects: 5,
     }),
     ConfigModule,
