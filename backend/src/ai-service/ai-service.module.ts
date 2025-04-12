@@ -5,20 +5,28 @@
  */
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
+import { ConfigModule } from '@nestjs/config';
 import { AiServiceController } from './ai-service.controller';
 import { AiServiceService } from './ai-service.service';
+import { DeadlinesModule } from '../deadlines/deadlines.module';
+import { UsersModule } from '../users/users.module';
 
 /**
- * Module d'intégration avec le service IA
- * Regroupe les composants liés à l'IA conversationnelle
+ * Module d'intégration avec le service IA Python
+ * Configure les composants nécessaires pour communiquer avec le service IA externe.
  */
 @Module({
   imports: [
-    // Module HTTP pour les requêtes vers le service Python
-    HttpModule,
+    HttpModule.register({
+      timeout: 15000, // 15 secondes de timeout
+      maxRedirects: 5,
+    }),
+    ConfigModule,
+    DeadlinesModule,
+    UsersModule,
   ],
-  controllers: [AiServiceController], // Contrôleur pour les endpoints IA
-  providers: [AiServiceService],      // Service pour la communication avec l'IA
-  exports: [AiServiceService],        // Exporte le service pour utilisation dans d'autres modules
+  controllers: [AiServiceController],
+  providers: [AiServiceService],
+  exports: [AiServiceService], // Exporte le service pour utilisation dans d'autres modules
 })
 export class AiServiceModule {}

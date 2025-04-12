@@ -156,4 +156,45 @@ export class DeadlinesService {
       relations: ['project'], // Inclut les informations sur le projet
     });
   }
+  /**
+   * Trouve des échéances similaires à une échéance donnée
+   * Utilisé pour l'analyse prédictive
+   * @param deadline Échéance de référence
+   * @returns Promise contenant la liste des échéances similaires
+   */
+  async findSimilar(deadline: Deadline): Promise<Deadline[]> {
+    // Création d'un query builder pour construire la requête
+    const query = this.deadlinesRepository.createQueryBuilder('deadline');
+
+    // Les échéances similaires sont celles qui partagent le même projet
+    if (deadline.projectId) {
+      query.andWhere('deadline.projectId = :projectId', { projectId: deadline.projectId });
+    }
+
+    // Ou celles qui ont la même priorité
+    else {
+      query.andWhere('deadline.priority = :priority', { priority: deadline.priority });
+    }
+
+    // Exclure l'échéance elle-même
+    query.andWhere('deadline.id != :id', { id: deadline.id });
+
+    // Limiter aux échéances terminées pour l'analyse prédictive
+    query.andWhere('deadline.status IN (:...statuses)', { 
+      statuses: [DeadlineStatus.COMPLETED, DeadlineStatus.CANCELLED] 
+    });
+
+    // Tri par date de création (du plus récent au plus ancien)
+    query.orderBy('deadline.createdAt', 'DESC');
+
+    // Limiter le nombre de résultats pour des performances optimales
+    query.limit(10);
+
+    // Chargement des relations pertinentes
+    query.leftJoinAndSelect('deadline.creator', 'creator');
+    query.leftJoinAndSelect('deadline.project', 'project');
+
+    // Exécution de la requête
+    return query.getMany();
+  }
 }

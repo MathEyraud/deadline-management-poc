@@ -1779,6 +1779,24 @@
         ]
       }
     },
+    "/ai/health": {
+      "get": {
+        "operationId": "AiServiceController_healthCheck",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Le service IA est disponible"
+          },
+          "503": {
+            "description": "Le service IA est indisponible"
+          }
+        },
+        "summary": "Vérifier l'état du service IA",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
     "/ai/query": {
       "post": {
         "operationId": "AiServiceController_query",
@@ -1795,7 +1813,10 @@
         },
         "responses": {
           "200": {
-            "description": "Réponse du modèle IA"
+            "description": "Réponse IA générée avec succès"
+          },
+          "401": {
+            "description": "Non autorisé"
           },
           "503": {
             "description": "Service IA indisponible"
@@ -1808,7 +1829,46 @@
         ],
         "summary": "Envoyer une requête au service IA",
         "tags": [
-          "ai-service"
+          "ai"
+        ]
+      }
+    },
+    "/ai/predict/{id}": {
+      "get": {
+        "operationId": "AiServiceController_predictDeadline",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de l'échéance à analyser",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analyse prédictive générée avec succès"
+          },
+          "401": {
+            "description": "Non autorisé"
+          },
+          "404": {
+            "description": "Échéance non trouvée"
+          },
+          "503": {
+            "description": "Service IA indisponible"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Analyse prédictive d'une échéance",
+        "tags": [
+          "ai"
         ]
       }
     }
@@ -2386,30 +2446,49 @@
           }
         }
       },
+      "MessageItemDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Rôle du message",
+            "example": "user"
+          },
+          "content": {
+            "type": "string",
+            "description": "Contenu du message",
+            "example": "Quelles sont mes échéances à venir cette semaine?"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ]
+      },
       "AiQueryDto": {
         "type": "object",
         "properties": {
           "query": {
             "type": "string",
             "description": "La question ou l'instruction de l'utilisateur",
-            "example": "Quelles sont mes échéances à venir cette semaine ?"
+            "example": "Quelles sont mes échéances à venir cette semaine?"
           },
           "context": {
+            "description": "Contexte optionnel (historique de conversation)",
             "type": "array",
-            "description": "Contexte optionnel (historique de conversation, etc.)",
             "items": {
-              "type": "object",
-              "properties": {
-                "role": {
-                  "type": "string",
-                  "example": "user"
-                },
-                "content": {
-                  "type": "string",
-                  "example": "Quelles sont mes projets actifs ?"
-                }
-              }
+              "$ref": "#/components/schemas/MessageItemDto"
             }
+          },
+          "includeDeadlines": {
+            "type": "boolean",
+            "description": "Inclure les échéances de l'utilisateur",
+            "default": true
+          },
+          "saveToHistory": {
+            "type": "boolean",
+            "description": "Sauvegarder la conversation dans l'historique",
+            "default": true
           }
         },
         "required": [
