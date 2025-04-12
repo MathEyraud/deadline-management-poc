@@ -3,8 +3,8 @@
  * Centralise la logique de conversation avec l'agent IA
  * @module hooks/useChat
  */
-import { useState, useCallback, useRef, RefObject } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useState, useCallback, useRef, RefObject, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiService } from '../lib/api';
 import { AIQuery, AIResponse } from '../types';
 import { useNotifications } from '@/app/providers';
@@ -47,7 +47,16 @@ export interface UseChatResult {
   
   /** Référence au dernier message - peut être null */
   lastMessageRef: RefObject<HTMLDivElement | null>;
+  
+  /** État de santé du service IA */
+  aiHealth: { status: string, uptime: number } | null;
 }
+
+// Clé pour le stockage local des messages
+const CHAT_STORAGE_KEY = 'ai_chat_history';
+
+// Nombre maximal de messages à conserver dans le contexte envoyé à l'IA
+const MAX_CONTEXT_MESSAGES = 20;
 
 /**
  * Hook personnalisé pour gérer les conversations avec l'agent IA
@@ -55,7 +64,24 @@ export interface UseChatResult {
  */
 export function useChat(): UseChatResult {
   // État pour stocker l'historique des messages
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    // Récupérer les messages stockés localement au chargement
+    if (typeof window !== 'undefined') {
+      const storedMessages = localStorage.getItem(CHAT_STORAGE_KEY);
+      if (storedMessages) {
+        try {
+          // Convertir les timestamps string en objets Date
+          return JSON.parse(storedMessages).map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+        } catch (e) {
+          console.error('Erreur lors du chargement de l\'historique des messages:', e);
+        }
+      }
+    }
+    return [];
+  });
   
   // État pour suivre si une requête est en cours
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -63,11 +89,44 @@ export function useChat(): UseChatResult {
   // État pour stocker l'erreur
   const [error, setError] = useState<Error | null>(null);
   
-  // Référence pour le scroll automatique - corrigé le type
+  // État pour l'état de santé du service IA
+  const [aiHealth, setAIHealth] = useState<{ status: string, uptime: number } | null>(null);
+  
+  // Référence pour le scroll automatique
   const lastMessageRef = useRef<HTMLDivElement>(null);
   
   // Système de notifications
   const { showNotification } = useNotifications();
+  
+  // Client de requête pour la mise en cache
+  const queryClient = useQueryClient();
+  
+  // Sauvegarder les messages dans localStorage quand ils changent
+  useEffect(() => {
+    if (typeof window !== 'undefined' && messages.length > 0) {
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    }
+  }, [messages]);
+  
+  // Vérifier l'état de santé du service IA au montage
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const health = await aiService.checkAIHealth();
+        setAIHealth(health);
+      } catch (err) {
+        console.warn('Service IA indisponible:', err);
+        setAIHealth(null);
+      }
+    };
+    
+    checkHealth();
+    
+    // Vérifier périodiquement l'état du service (toutes les 5 minutes)
+    const interval = setInterval(checkHealth, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
   
   // Mutation pour envoyer une requête à l'IA
   const aiMutation = useMutation({
@@ -78,7 +137,7 @@ export function useChat(): UseChatResult {
         id: Date.now().toString(),
         role: 'assistant',
         content: response.response,
-        timestamp: new Date(),
+        timestamp: new Date(response.timestamp || Date.now()),
       };
       
       setMessages(prev => [...prev, assistantMessage]);
@@ -99,7 +158,15 @@ export function useChat(): UseChatResult {
       setMessages(prev => [...prev, errorMessage]);
       setIsLoading(false);
       setError(error);
-      showNotification('Erreur de communication avec l\'IA', 'error');
+      
+      // Si le service est indisponible (503)
+      if (error.message.includes('503') || error.message.includes('unavailable')) {
+        showNotification('Le service IA est temporairement indisponible', 'error');
+        // Mettre à jour l'état de santé
+        setAIHealth(null);
+      } else {
+        showNotification('Erreur de communication avec l\'IA', 'error');
+      }
     },
   });
   
@@ -122,18 +189,20 @@ export function useChat(): UseChatResult {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
-    // Prépare le contexte pour l'IA (5 derniers messages)
-    const recentMessages = [...messages, userMessage].slice(-5);
+    // Prépare le contexte pour l'IA (derniers messages)
+    const recentMessages = [...messages, userMessage].slice(-MAX_CONTEXT_MESSAGES);
     const context = recentMessages.map(msg => ({
       role: msg.role,
       content: msg.content,
     }));
     
-    // Envoie la requête à l'IA
+    // Envoie la requête à l'IA avec le nouveau format
     try {
       await aiMutation.mutateAsync({
         query: content,
         context,
+        includeDeadlines: true,
+        saveToHistory: true
       });
     } catch (err) {
       // Gestion des erreurs spécifiques (déjà gérée par onError)
@@ -146,6 +215,11 @@ export function useChat(): UseChatResult {
   const clearMessages = useCallback(() => {
     setMessages([]);
     setError(null);
+    
+    // Supprimer l'historique du stockage local
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(CHAT_STORAGE_KEY);
+    }
   }, []);
   
   return {
@@ -155,6 +229,7 @@ export function useChat(): UseChatResult {
     isLoading,
     error,
     lastMessageRef,
+    aiHealth,
   };
 }
 

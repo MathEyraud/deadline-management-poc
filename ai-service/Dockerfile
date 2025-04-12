@@ -8,8 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEFAULT_MODEL=mistral-7b-instruct-v0.2.Q4_K_M.gguf \
     GPU_LAYERS=0 \
     MAX_TOKENS=512 \
-    TEMPERATURE=0.7 \
-    MAX_CONTEXT_ITEMS=10
+    TEMPERATURE=0.5 \
+    MAX_CONTEXT_ITEMS=10 \
+    MODEL_CTX_SIZE=2048
 
 # Définition du répertoire de travail
 WORKDIR /app

@@ -16,6 +16,7 @@ import { DeadlinePriority, DeadlineStatus } from '@/types';
 import { formatDateTime } from '@/lib/utils';
 import { DeadlineForm } from '@/components/deadline/DeadlineForm';
 import { useNotifications } from '@/app/providers';
+import DeadlinePrediction from '@/components/deadline/DeadlinePrediction';
 
 /**
  * Page de détail d'une échéance
@@ -209,6 +210,11 @@ export default function DeadlineDetailPage({ params }: { params: { id: string } 
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Analyse prédictive IA - NOUVELLE SECTION */}
+      <div className="mt-6">
+        <DeadlinePrediction deadlineId={id} />
       </div>
       
       {/* Modal pour éditer l'échéance */}

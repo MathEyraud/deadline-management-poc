@@ -10,6 +10,7 @@ import { Send, Trash2 } from 'lucide-react';
 import { Card, CardContent, Textarea, Button } from '@/components/ui';
 import { useChat, ChatMessage } from '@/hooks/useChat';
 import { formatDateTime } from '@/lib/utils';
+import { AIStatusIndicator } from '@/components/ai/AIStatusIndicator';
 
 /**
  * Props pour le composant ChatInterface
@@ -55,21 +56,21 @@ const ChatMessageItem = ({ message }: { message: ChatMessage }) => {
  * @returns Composant ChatInterface
  */
 export const ChatInterface = ({ className = '' }: ChatInterfaceProps) => {
-  const { messages, sendMessage, clearMessages, isLoading } = useChat();
+  const { messages, sendMessage, clearMessages, isLoading, lastMessageRef, aiHealth } = useChat();
   const [inputValue, setInputValue] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Exemples de requêtes pour aider l'utilisateur
+  
+  // Suggestions de requêtes pour aider l'utilisateur
   const exampleQueries = [
     "Quelles sont mes échéances à venir cette semaine ?",
     "Aide-moi à prioriser mes tâches",
     "Crée un résumé de mon projet principal",
-    "Rappelle-moi les étapes pour compléter l'échéance"
+    "Quels sont les risques associés à mon projet actuel ?",
+    "Quelles sont les tâches que je pourrais déléguer ?"
   ];
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // Handle form submission
@@ -88,22 +89,23 @@ export const ChatInterface = ({ className = '' }: ChatInterfaceProps) => {
   };
 
   return (
-    <Card className={`flex flex-col h-[calc(100vh-12rem)] ${className}`}>
+    <Card className={`flex flex-col ${className}`}>
       <CardContent className="flex flex-col h-full p-0">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-          <div className="flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div className="flex items-center">
             <h3 className="font-medium">Assistant IA</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearMessages}
-              className="text-slate-500"
-              title="Effacer la conversation"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <AIStatusIndicator health={aiHealth} className="ml-2" />
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearMessages}
+            className="text-slate-500"
+            title="Effacer la conversation"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
         
         {/* Messages */}
@@ -132,36 +134,50 @@ export const ChatInterface = ({ className = '' }: ChatInterfaceProps) => {
             </div>
           ) : (
             <>
-              {messages.map((message) => (
+              {messages.map((message, index) => (
                 <ChatMessageItem key={message.id} message={message} />
               ))}
+              {/* Indicateur de chargement si l'IA est en train de répondre */}
+              {isLoading && (
+                <div className="flex justify-start mb-4">
+                  <div className="bg-slate-100 text-slate-800 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Empty div for scrolling to bottom */}
+              <div ref={lastMessageRef} />
             </>
           )}
-          {/* Empty div for scrolling to bottom */}
-          <div ref={messagesEndRef} />
         </div>
         
         {/* Input area */}
-        <div className="border-t border-slate-200 p-4">
-          <form onSubmit={handleSubmit} className="flex space-x-2">
-            <Textarea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Tapez votre message..."
-              className="flex-1 resize-none"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-            />
+        <div className="border-t border-slate-200 p-4 w-full">
+          <form onSubmit={handleSubmit} className="flex w-full gap-2">
+            <div className="flex-grow">
+              <Textarea
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Tapez votre message..."
+                className="w-full resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }
+                }}
+              />
+            </div>
             <Button 
               type="submit" 
               variant="primary"
               isLoading={isLoading}
               disabled={isLoading || !inputValue.trim()}
-              className="self-end"
+              className="self-end flex-shrink-0"
             >
               <Send className="h-4 w-4" />
             </Button>

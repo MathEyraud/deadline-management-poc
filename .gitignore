@@ -74,6 +74,7 @@ tmp/
 # Fichiers spécifiques à Nest.js
 /coverage/
 /.nyc_output/
+uploads/
 
 # Fichiers de tests
 /coverage/

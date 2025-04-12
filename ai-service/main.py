@@ -47,8 +47,9 @@ DEFAULT_MODEL = os.environ.get(
 MODEL_PATH = os.path.join(MODEL_DIR, DEFAULT_MODEL)
 GPU_LAYERS = int(os.environ.get("GPU_LAYERS", "0"))  # Nombre de couches à exécuter sur GPU
 MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "512"))  # Nombre maximum de tokens générés
-TEMPERATURE = float(os.environ.get("TEMPERATURE", "0.7"))  # Température pour la génération
+TEMPERATURE = float(os.environ.get("TEMPERATURE", "0.5"))  # Température pour la génération
 MAX_CONTEXT_ITEMS = int(os.environ.get("MAX_CONTEXT_ITEMS", "10"))  # Nombre max d'items dans le contexte
+MODEL_CTX_SIZE = int(os.environ.get("MODEL_CTX_SIZE", "2048"))  # Taille du contexte, par défaut 2048
 
 # Vérification du backend disponible
 try:
@@ -160,7 +161,7 @@ async def load_model():
             model = Llama(
                 model_path=MODEL_PATH,
                 n_gpu_layers=GPU_LAYERS,
-                n_ctx=2048,
+                n_ctx=MODEL_CTX_SIZE,
                 verbose=False
             )
         else:  # ctransformers
@@ -168,7 +169,8 @@ async def load_model():
             model = AutoModelForCausalLM.from_pretrained(
                 MODEL_PATH,
                 model_type=model_type,
-                gpu_layers=GPU_LAYERS
+                gpu_layers=GPU_LAYERS,
+                context_length=MODEL_CTX_SIZE
             )
         logger.info("Modèle chargé avec succès")
     except Exception as e:
@@ -200,7 +202,10 @@ def format_prompt_mistral(query: str, context: List[MessageItem] = None, deadlin
     """
     system_prompt = """Tu es un assistant IA spécialisé dans la gestion d'échéances. Tu aides les utilisateurs à gérer leurs échéances, projets et délais.
 Tu analyses les informations fournies et tu donnes des conseils pertinents, des analyses et des prédictions.
-Ton objectif est d'aider l'utilisateur à mieux organiser son travail, à respecter ses délais et à prioriser ses tâches."""
+Ton objectif est d'aider l'utilisateur à mieux organiser son travail, à respecter ses délais et à prioriser ses tâches.
+Tu dois toujours répondre en Français et être poli et professionnel.
+Ne fais pas de suppositions sur les informations que tu n'as pas reçues.
+Ne fais pas de remarques sur les informations que tu n'as pas reçues."""
 
     # Ajouter les informations sur les échéances au système s'il y en a
     if deadlines and len(deadlines) > 0:
