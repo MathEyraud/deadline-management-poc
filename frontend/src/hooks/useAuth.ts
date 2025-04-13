@@ -99,7 +99,7 @@ export function useAuth(): UseAuthResult {
     onSuccess: () => {
       setError(null);
       showNotification('Compte créé avec succès', 'success');
-      router.push('/auth/login?registered=true');
+      router.push('/login?registered=true');
     },
     onError: (err: Error) => {
       setError(err);
@@ -145,7 +145,7 @@ export function useAuth(): UseAuthResult {
     queryClient.clear();
     
     showNotification('Vous avez été déconnecté', 'info');
-    router.push('/auth/login');
+    router.push('/login');
   }, [router, queryClient, showNotification]);
 
   return {

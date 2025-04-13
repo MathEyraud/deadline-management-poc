@@ -31,7 +31,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   // Redirection si non authentifié
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.push('/login');
     }
   }, [isAuthenticated, loading, router]);
 

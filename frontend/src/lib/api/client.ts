@@ -62,8 +62,8 @@ const createAPIClient = (): AxiosInstance => {
           localStorage.removeItem('user');
           
           // Redirection vers la page de login si on n'y est pas déjà
-          if (window.location.pathname !== '/auth/login') {
-            window.location.href = '/auth/login';
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
           }
         }
       }
