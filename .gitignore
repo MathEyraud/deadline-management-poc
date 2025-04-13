@@ -83,3 +83,5 @@ uploads/
 # Autres fichiers à ne pas versionner
 .vercel
 .netlify
+
+*test.py

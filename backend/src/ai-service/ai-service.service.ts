@@ -77,11 +77,12 @@ export class AiServiceService {
    */
   async query(userId: string, aiQueryDto: AiQueryDto) {
     try {
-      // Récupérer les échéances de l'utilisateur si nécessaire
+      // Récupérer les échéances accessibles de l'utilisateur si nécessaire
       let deadlines: Deadline[] = [];
       if (aiQueryDto.includeDeadlines) {
-        deadlines = await this.deadlinesService.findByUser(userId);
-        this.logger.debug(`Récupération de ${deadlines.length} échéances pour l'utilisateur ${userId}`);
+        // Utilisation de la nouvelle méthode au lieu de findByUser
+        deadlines = await this.deadlinesService.getAccessibleDeadlines(userId);
+        this.logger.debug(`Récupération de ${deadlines.length} échéances accessibles pour l'utilisateur ${userId}`);
       }
 
       // Récupérer l'utilisateur
@@ -90,7 +91,7 @@ export class AiServiceService {
         throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
       }
 
-      // Préparer la requête pour le service IA
+      // Le reste du code reste identique...
       const requestData = {
         query: aiQueryDto.query,
         context: aiQueryDto.context || [],
@@ -129,8 +130,6 @@ export class AiServiceService {
 
       // Enregistrer la conversation dans l'historique si nécessaire
       if (aiQueryDto.saveToHistory) {
-        // Cette fonctionnalité sera implémentée ultérieurement
-        // Possibilité de créer une table ConversationHistory dans la base de données
         this.logger.debug('Sauvegarde de la conversation dans l\'historique');
       }
 

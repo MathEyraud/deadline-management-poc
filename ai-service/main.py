@@ -162,8 +162,11 @@ async def load_model():
                 model_path=MODEL_PATH,
                 n_gpu_layers=GPU_LAYERS,
                 n_ctx=MODEL_CTX_SIZE,
-                verbose=False
+                verbose=True
             )
+            # Vérifier l'utilisation du GPU
+            gpu_info = "Utilisant CUDA avec {} couches sur GPU".format(GPU_LAYERS) if GPU_LAYERS != 0 else "N'utilisant pas le GPU"
+            logger.info(gpu_info)
         else:  # ctransformers
             model_type = "mistral" if "mistral" in MODEL_PATH.lower() else "llama"
             model = AutoModelForCausalLM.from_pretrained(
@@ -172,6 +175,9 @@ async def load_model():
                 gpu_layers=GPU_LAYERS,
                 context_length=MODEL_CTX_SIZE
             )
+            gpu_info = "Utilisant {} couches sur GPU avec ctransformers".format(GPU_LAYERS) if GPU_LAYERS != 0 else "N'utilisant pas le GPU"
+            logger.info(gpu_info)
+            
         logger.info("Modèle chargé avec succès")
     except Exception as e:
         model_loading = False
