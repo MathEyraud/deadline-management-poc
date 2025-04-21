@@ -11,7 +11,9 @@ import { catchError, map } from 'rxjs/operators';
 import { AiQueryDto } from './dto/ai-query.dto';
 import { DeadlinesService } from '../deadlines/deadlines.service';
 import { UsersService } from '../users/users.service';
-import { Deadline } from '../deadlines/entities/deadline.entity'; // Importez explicitement le type Deadline
+import { ConversationsService } from './conversations.service';
+import { Deadline } from '../deadlines/entities/deadline.entity';
+import { AiConversation, ConversationMessage } from './entities/conversation.entity';
 
 /**
  * Service d'intégration avec le service IA Python
@@ -28,12 +30,14 @@ export class AiServiceService {
    * @param configService Service de configuration
    * @param deadlinesService Service pour accéder aux échéances
    * @param usersService Service pour accéder aux utilisateurs
+   * @param conversationsService Service pour gérer les conversations
    */
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly deadlinesService: DeadlinesService,
     private readonly usersService: UsersService,
+    private readonly conversationsService: ConversationsService,
   ) {
     this.serviceUrl = this.configService.get<string>('AI_SERVICE_URL', 'http://localhost:8000');
     this.logger.log(`Service IA configuré avec l'URL: ${this.serviceUrl}`);
@@ -70,9 +74,10 @@ export class AiServiceService {
 
   /**
    * Traite une requête utilisateur et obtient une réponse du service IA
+   * Gère également la persistance de l'historique des conversations
    * @param userId ID de l'utilisateur qui fait la requête
    * @param aiQueryDto DTO contenant la requête et le contexte
-   * @returns Réponse du service IA
+   * @returns Réponse du service IA et informations de la conversation
    * @throws HttpException en cas d'erreur
    */
   async query(userId: string, aiQueryDto: AiQueryDto) {
@@ -80,7 +85,6 @@ export class AiServiceService {
       // Récupérer les échéances accessibles de l'utilisateur si nécessaire
       let deadlines: Deadline[] = [];
       if (aiQueryDto.includeDeadlines) {
-        // Utilisation de la nouvelle méthode au lieu de findByUser
         deadlines = await this.deadlinesService.getAccessibleDeadlines(userId);
         this.logger.debug(`Récupération de ${deadlines.length} échéances accessibles pour l'utilisateur ${userId}`);
       }
@@ -91,10 +95,56 @@ export class AiServiceService {
         throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
       }
 
-      // Le reste du code reste identique...
+      // Gérer l'historique de conversation
+      let conversation: AiConversation | null = null;
+
+      let context = aiQueryDto.context || [];
+      
+      if (aiQueryDto.saveToHistory) {
+        // Si un ID de conversation est fourni, récupérer la conversation existante
+        if (aiQueryDto.conversationId) {
+          try {
+            conversation = await this.conversationsService.findOne(aiQueryDto.conversationId);
+            // Vérifier que la conversation appartient bien à l'utilisateur
+            if (conversation.userId !== userId) {
+              throw new HttpException('Conversation non autorisée', HttpStatus.FORBIDDEN);
+            }
+            
+            // Utiliser les messages existants comme contexte
+            context = conversation.messages.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            }));
+          } catch (error) {
+            if (error instanceof HttpException) {
+              throw error;
+            }
+            // Si la conversation n'est pas trouvée, en créer une nouvelle
+            this.logger.warn(`Conversation ${aiQueryDto.conversationId} non trouvée, création d'une nouvelle conversation`);
+            conversation = null;
+          }
+        }
+        
+        // Si aucune conversation existante, en créer une nouvelle
+        if (!conversation) {
+          conversation = await this.conversationsService.create({
+            title: aiQueryDto.query.substring(0, 50) + (aiQueryDto.query.length > 50 ? '...' : ''),
+            userId: userId
+          });
+          this.logger.debug(`Nouvelle conversation créée avec ID: ${conversation.id}`);
+        }
+        
+        // Ajouter la requête comme message de l'utilisateur à la conversation
+        await this.conversationsService.addMessage(conversation.id, {
+          role: 'user',
+          content: aiQueryDto.query
+        });
+      }
+
+      // Préparer les données pour la requête au service IA
       const requestData = {
         query: aiQueryDto.query,
-        context: aiQueryDto.context || [],
+        context: context,
         deadlines: deadlines.map(deadline => ({
           id: deadline.id,
           title: deadline.title,
@@ -128,15 +178,24 @@ export class AiServiceService {
         ),
       );
 
-      // Enregistrer la conversation dans l'historique si nécessaire
-      if (aiQueryDto.saveToHistory) {
-        this.logger.debug('Sauvegarde de la conversation dans l\'historique');
+      // Enregistrer la réponse dans l'historique si nécessaire
+      if (aiQueryDto.saveToHistory && conversation) {
+        await this.conversationsService.addMessage(conversation.id, {
+          role: 'assistant',
+          content: response.response
+        });
+        this.logger.debug(`Réponse IA enregistrée dans la conversation ${conversation.id}`);
       }
 
+      // Retourner la réponse avec les informations de conversation
       return {
         response: response.response,
         processing_time: response.processing_time,
         timestamp: new Date().toISOString(),
+        conversation: aiQueryDto.saveToHistory && conversation ? {
+          id: conversation.id,
+          message_count: (await this.conversationsService.getMessages(conversation.id)).length
+        } : null
       };
     } catch (error) {
       this.logger.error(`Erreur lors du traitement de la requête IA: ${error.message}`);
@@ -167,8 +226,7 @@ export class AiServiceService {
       this.logger.debug(`Analyse prédictive pour l'échéance ${deadlineId}: ${deadline.title}`);
 
       // Récupérer des échéances historiques similaires pour comparaison
-      // Nous utiliserons une méthode à ajouter au service des échéances
-      const historicalDeadlines: Deadline[] = await this.findSimilarDeadlines(deadline);
+      const historicalDeadlines = await this.findSimilarDeadlines(deadline);
 
       // Préparer la requête pour le service IA
       const requestData = {

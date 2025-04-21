@@ -4,7 +4,7 @@
  * @module AiQueryDto
  */
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsArray, IsBoolean, IsOptional, ValidateNested } from 'class-validator';
+import { IsString, IsArray, IsBoolean, IsOptional, ValidateNested, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -83,4 +83,17 @@ export class AiQueryDto {
   @IsOptional()
   @IsBoolean()
   saveToHistory?: boolean = true;
+  
+  /**
+   * ID de la conversation à utiliser/continuer
+   * Si non fourni et saveToHistory=true, une nouvelle conversation sera créée
+   */
+  @ApiProperty({
+    description: 'ID de la conversation existante à continuer',
+    required: false,
+    example: '7a9d0f35-d562-4219-c732-d35cf1a2e5f9'
+  })
+  @IsOptional()
+  @IsUUID()
+  conversationId?: string;
 }

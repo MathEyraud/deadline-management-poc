@@ -3,8 +3,8 @@
  * Gère les points d'accès (endpoints) pour les interactions avec l'IA.
  * @module AiServiceController
  */
-import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AiServiceService } from './ai-service.service';
 import { AiQueryDto } from './dto/ai-query.dto';
@@ -36,16 +36,20 @@ export class AiServiceController {
 
   /**
    * Envoie une requête au service IA
+   * Gère également l'historique de conversation si saveToHistory=true
    * @param req Objet requête contenant l'utilisateur authentifié
    * @param aiQueryDto DTO contenant la requête et le contexte
-   * @returns Réponse du service IA
+   * @returns Réponse du service IA avec informations de conversation
    */
   @Post('query')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Envoyer une requête au service IA' })
+  @ApiBody({ type: AiQueryDto })
   @ApiResponse({ status: 200, description: 'Réponse IA générée avec succès' })
   @ApiResponse({ status: 401, description: 'Non autorisé' })
+  @ApiResponse({ status: 403, description: 'Conversation non autorisée' })
+  @ApiResponse({ status: 404, description: 'Conversation non trouvée' })
   @ApiResponse({ status: 503, description: 'Service IA indisponible' })
   async query(@Req() req, @Body() aiQueryDto: AiQueryDto) {
     // Récupération de l'ID utilisateur depuis le token JWT (req.user)
