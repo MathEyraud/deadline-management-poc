@@ -93,18 +93,27 @@ class DeadlineInfo(BaseModel):
             datetime: lambda v: v.isoformat()
         }
 
+class UserInfo(BaseModel):
+    """Informations sur l'utilisateur"""
+    firstName: str
+    lastName: str
+    role: str
+    department: Optional[str] = None
+
 class ChatRequest(BaseModel):
     """Requête pour le chat"""
     query: str = Field(..., description="La requête en langage naturel")
     context: Optional[List[MessageItem]] = Field(None, description="Contexte de conversation précédent")
     deadlines: Optional[List[DeadlineInfo]] = Field(None, description="Échéances à inclure dans le contexte")
     user_id: Optional[str] = Field(None, description="ID de l'utilisateur")
+    user_info: Optional[UserInfo] = Field(None, description="Informations sur l'utilisateur")
 
 class PredictionRequest(BaseModel):
     """Requête pour l'analyse prédictive"""
     deadline_data: DeadlineInfo
     historical_data: Optional[List[DeadlineInfo]] = None
     user_id: Optional[str] = None
+    user_info: Optional[UserInfo] = None
 
 class ChatResponse(BaseModel):
     """Réponse du chat"""
@@ -139,16 +148,38 @@ async def check_ollama_status():
         return False, []
 
 # Formatage du prompt pour le modèle
-def format_prompt_mistral(query: str, context: List[MessageItem] = None, deadlines: List[DeadlineInfo] = None) -> str:
+def format_prompt_mistral(
+    query: str, 
+    context: List[MessageItem] = None, 
+    deadlines: List[DeadlineInfo] = None,
+    user_info: UserInfo = None
+) -> List[Dict[str, str]]:
     """
     Formate le prompt pour Mistral en incluant le contexte et les informations sur les échéances.
+    
+    Args:
+        query: La requête utilisateur actuelle
+        context: Historique de conversation (messages précédents)
+        deadlines: Liste des échéances à inclure dans le contexte
+        user_info: Informations sur l'utilisateur
+        
+    Returns:
+        Liste de messages au format attendu par Ollama
     """
+    # Construction du prompt système
     system_prompt = """[Speak in french] Tu es un assistant IA spécialisé dans la gestion d'échéances. Tu aides les utilisateurs à gérer leurs échéances, projets et délais.
 Tu analyses les informations fournies et tu donnes des conseils pertinents, des analyses et des prédictions.
 Ton objectif est d'aider l'utilisateur à mieux organiser son travail, à respecter ses délais et à prioriser ses tâches.
 Tu dois toujours répondre en Français et être poli et professionnel.
 Ne fais pas de suppositions sur les informations que tu n'as pas reçues.
 Ne fais pas de remarques sur les informations que tu n'as pas reçues."""
+
+    # Ajouter les informations utilisateur si disponibles
+    if user_info:
+        system_prompt += f"\n\nTu interagis avec {user_info.firstName} {user_info.lastName}, qui a le rôle de {user_info.role}"
+        if user_info.department:
+            system_prompt += f" dans le département {user_info.department}"
+        system_prompt += "."
 
     # Ajouter les informations sur les échéances au système s'il y en a
     if deadlines and len(deadlines) > 0:
@@ -178,10 +209,21 @@ Ne fais pas de remarques sur les informations que tu n'as pas reçues."""
     messages.append({"role": "system", "content": system_prompt})
     
     # Ajouter le contexte de la conversation
-    if context:
-        # Limiter le contexte au nombre max d'éléments
+    if context and len(context) > 0:
+        logger.info(f"Utilisation d'un contexte de conversation avec {len(context)} messages")
+        
+        # Limiter le contexte au nombre max d'éléments si nécessaire
         limited_context = context[-MAX_CONTEXT_ITEMS:] if len(context) > MAX_CONTEXT_ITEMS else context
-        messages.extend([{"role": msg.role, "content": msg.content} for msg in limited_context])
+        
+        # Si nous avons tronqué le contexte, on le log
+        if len(context) > MAX_CONTEXT_ITEMS:
+            logger.info(f"Contexte tronqué de {len(context)} à {MAX_CONTEXT_ITEMS} messages")
+        
+        # Ajouter chaque message du contexte
+        for msg in limited_context:
+            messages.append({"role": msg.role, "content": msg.content})
+    else:
+        logger.info("Aucun contexte de conversation fourni")
     
     # Ajouter la requête actuelle
     messages.append({"role": "user", "content": query})
@@ -290,17 +332,24 @@ async def chat(request: ChatRequest):
     Endpoint pour interagir avec le modèle en mode chat.
     
     - query: La question ou instruction de l'utilisateur
-    - context: Historique de conversation optionnel
+    - context: Historique de conversation (messages précédents)
     - deadlines: Informations sur les échéances pour enrichir le contexte
+    - user_id: Identifiant de l'utilisateur
+    - user_info: Informations sur l'utilisateur
     """
     start_time = time.time()
     
     try:
+        # Log du nombre de messages de contexte reçus
+        context_count = len(request.context) if request.context else 0
+        logger.info(f"Requête chat reçue avec {context_count} messages de contexte")
+        
         # Formater les messages pour Ollama
         messages = format_prompt_mistral(
             query=request.query,
             context=request.context,
-            deadlines=request.deadlines
+            deadlines=request.deadlines,
+            user_info=request.user_info
         )
         
         # Générer la réponse via Ollama
@@ -308,6 +357,7 @@ async def chat(request: ChatRequest):
         
         # Calculer le temps de traitement
         processing_time = time.time() - start_time
+        logger.info(f"Réponse générée en {processing_time:.2f} secondes")
         
         return ChatResponse(
             response=response_text,
@@ -337,7 +387,12 @@ async def predict(request: PredictionRequest):
         date_str = request.deadline_data.deadlineDate.strftime("%d/%m/%Y %H:%M")
         days_left = (request.deadline_data.deadlineDate - now).days
         
-        query = f"""Analyse cette échéance et prédit sa probabilité de complétion dans les délais.
+        # Personnalisation selon l'utilisateur
+        user_greeting = ""
+        if request.user_info:
+            user_greeting = f"Analyse pour {request.user_info.firstName} {request.user_info.lastName} ({request.user_info.role}): "
+        
+        query = f"""{user_greeting}Analyse cette échéance et prédit sa probabilité de complétion dans les délais.
         
 Échéance: {request.deadline_data.title}
 Description: {request.deadline_data.description or 'Non spécifiée'}
