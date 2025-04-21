@@ -6,8 +6,9 @@
 import { useState, useCallback, useRef, RefObject, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiService } from '../lib/api';
-import { AIQuery, AIResponse } from '../types';
+import { AIQuery, AIResponse, Conversation, Message } from '../types';
 import { useNotifications } from '@/app/providers';
+import { useConversationMessages, conversationsKeys } from './useConversations';
 
 /**
  * Type pour un message de chat
@@ -45,15 +46,21 @@ export interface UseChatResult {
   /** Fonction pour effacer l'historique des messages */
   clearMessages: () => void;
   
+  /** Fonction pour changer de conversation active */
+  setActiveConversation: (conversationId: string | null) => void;
+  
+  /** ID de la conversation active */
+  activeConversationId: string | null;
+  
   /** Référence au dernier message - peut être null */
   lastMessageRef: RefObject<HTMLDivElement | null>;
   
   /** État de santé du service IA */
   aiHealth: { status: string, uptime: number } | null;
+  
+  /** Indique si les messages sont chargés depuis une conversation existante */
+  isLoadingConversation: boolean;
 }
-
-// Clé pour le stockage local des messages
-const CHAT_STORAGE_KEY = 'ai_chat_history';
 
 // Nombre maximal de messages à conserver dans le contexte envoyé à l'IA
 const MAX_CONTEXT_MESSAGES = 20;
@@ -64,24 +71,10 @@ const MAX_CONTEXT_MESSAGES = 20;
  */
 export function useChat(): UseChatResult {
   // État pour stocker l'historique des messages
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    // Récupérer les messages stockés localement au chargement
-    if (typeof window !== 'undefined') {
-      const storedMessages = localStorage.getItem(CHAT_STORAGE_KEY);
-      if (storedMessages) {
-        try {
-          // Convertir les timestamps string en objets Date
-          return JSON.parse(storedMessages).map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp)
-          }));
-        } catch (e) {
-          console.error('Erreur lors du chargement de l\'historique des messages:', e);
-        }
-      }
-    }
-    return [];
-  });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  
+  // État pour stocker la conversation active
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   
   // État pour suivre si une requête est en cours
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -101,12 +94,26 @@ export function useChat(): UseChatResult {
   // Client de requête pour la mise en cache
   const queryClient = useQueryClient();
   
-  // Sauvegarder les messages dans localStorage quand ils changent
+  // Récupérer les messages de la conversation active
+  const { 
+    data: conversationMessages = [],
+    isLoading: isLoadingConversation,
+    refetch: refetchMessages
+  } = useConversationMessages(activeConversationId, !!activeConversationId);
+  
+  // Mettre à jour les messages locaux lorsque les messages de la conversation changent
   useEffect(() => {
-    if (typeof window !== 'undefined' && messages.length > 0) {
-      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    if (conversationMessages.length > 0 && activeConversationId) {
+      const formattedMessages = conversationMessages.map(msg => ({
+        id: msg.id || `${Date.now()}-${Math.random()}`,
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.timestamp)
+      }));
+      
+      setMessages(formattedMessages);
     }
-  }, [messages]);
+  }, [conversationMessages, activeConversationId]);
   
   // Vérifier l'état de santé du service IA au montage
   useEffect(() => {
@@ -143,6 +150,24 @@ export function useChat(): UseChatResult {
       setMessages(prev => [...prev, assistantMessage]);
       setIsLoading(false);
       setError(null);
+      
+      // Si une conversation a été créée ou mise à jour, stocke son ID
+      if (response.conversation && response.conversation.id) {
+        setActiveConversationId(response.conversation.id);
+        
+        // Invalider les requêtes pour mettre à jour la liste des conversations
+        queryClient.invalidateQueries({ queryKey: conversationsKeys.lists() });
+        
+        // Invalider les requêtes pour la conversation spécifique
+        queryClient.invalidateQueries({ 
+          queryKey: conversationsKeys.detail(response.conversation.id) 
+        });
+        
+        // Si des messages ont été ajoutés, recharger les messages
+        if (variables.saveToHistory) {
+          refetchMessages();
+        }
+      }
     },
     onError: (error: Error) => {
       console.error('Erreur lors de la communication avec l\'IA:', error);
@@ -202,23 +227,32 @@ export function useChat(): UseChatResult {
         query: content,
         context,
         includeDeadlines: true,
-        saveToHistory: true
+        saveToHistory: true,
+        conversationId: activeConversationId || undefined
       });
     } catch (err) {
       // Gestion des erreurs spécifiques (déjà gérée par onError)
     }
-  }, [messages, aiMutation, showNotification]);
+  }, [messages, aiMutation, activeConversationId, showNotification, refetchMessages]);
   
   /**
-   * Efface l'historique des messages
+   * Efface l'historique des messages et réinitialise la conversation active
    */
   const clearMessages = useCallback(() => {
     setMessages([]);
+    setActiveConversationId(null);
     setError(null);
-    
-    // Supprimer l'historique du stockage local
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(CHAT_STORAGE_KEY);
+  }, []);
+  
+  /**
+   * Change la conversation active
+   * @param conversationId - ID de la conversation à activer
+   */
+  const changeActiveConversation = useCallback((conversationId: string | null) => {
+    setActiveConversationId(conversationId);
+    // Réinitialiser les messages si on désactive la conversation
+    if (!conversationId) {
+      setMessages([]);
     }
   }, []);
   
@@ -226,10 +260,13 @@ export function useChat(): UseChatResult {
     messages,
     sendMessage,
     clearMessages,
+    setActiveConversation: changeActiveConversation,
+    activeConversationId,
     isLoading,
     error,
     lastMessageRef,
     aiHealth,
+    isLoadingConversation,
   };
 }
 

@@ -29,6 +29,9 @@ export interface AIQuery {
   
   /** Indique si l'échange doit être sauvegardé dans l'historique des conversations */
   saveToHistory?: boolean;
+  
+  /** ID d'une conversation existante à continuer */
+  conversationId?: string;
 }
 
 /**
@@ -43,6 +46,12 @@ export interface AIResponse {
   
   /** Horodatage de la réponse */
   timestamp: string;
+  
+  /** Informations sur la conversation utilisée ou créée (si saveToHistory est true) */
+  conversation?: {
+    id: string;
+    message_count: number;
+  };
 }
 
 /**
@@ -66,6 +75,52 @@ export interface AIPrediction {
   
   /** Horodatage de la prédiction */
   timestamp: string;
+}
+
+/**
+ * Message dans une conversation
+ */
+export interface Message {
+  /** Identifiant unique du message */
+  id?: string;
+  
+  /** Rôle dans la conversation (utilisateur ou assistant) */
+  role: 'user' | 'assistant';
+  
+  /** Contenu du message */
+  content: string;
+  
+  /** Horodatage du message */
+  timestamp: string;
+}
+
+/**
+ * Conversation avec l'IA
+ */
+export interface Conversation {
+  /** Identifiant unique de la conversation */
+  id: string;
+  
+  /** Titre de la conversation */
+  title: string;
+  
+  /** Identifiant de l'utilisateur propriétaire */
+  userId: string;
+  
+  /** Liste des messages de la conversation */
+  messages?: Message[];
+  
+  /** Date de création de la conversation */
+  createdAt: string;
+  
+  /** Date de dernière mise à jour de la conversation */
+  updatedAt: string;
+  
+  /** Indique si la conversation est active */
+  isActive: boolean;
+  
+  /** Nombre de messages dans la conversation (si messages n'est pas inclus) */
+  message_count?: number;
 }
 
 // Exporter les types précédents pour la rétrocompatibilité

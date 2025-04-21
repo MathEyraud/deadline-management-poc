@@ -1,9 +1,4 @@
-/**
- * Composant PageHeader
- * En-tête de page standardisé avec titre, description et actions
- * @module components/layout/PageHeader
- */
-import React, { ReactNode } from 'react';
+import { ReactNode } from "react";
 
 /**
  * Props pour le composant PageHeader
@@ -17,6 +12,9 @@ interface PageHeaderProps {
   
   /** Actions à afficher à droite (boutons, etc.) */
   actions?: ReactNode;
+  
+  /** Classes CSS supplémentaires */
+  className?: string;
 }
 
 /**
@@ -24,16 +22,16 @@ interface PageHeaderProps {
  * @param props - Propriétés du composant
  * @returns Composant PageHeader
  */
-export const PageHeader = ({ title, description, actions }: PageHeaderProps) => {
+export const PageHeader = ({ title, description, actions, className = '' }: PageHeaderProps) => {
   return (
-    <div className="mb-6 md:mb-8">
+    <div className={`mb-4 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             {title}
           </h1>
           {description && (
-            <p className="mt-1 text-sm text-slate-500 md:text-base">
+            <p className="mt-1 text-sm text-slate-500">
               {description}
             </p>
           )}
@@ -48,5 +46,3 @@ export const PageHeader = ({ title, description, actions }: PageHeaderProps) => 
     </div>
   );
 };
-
-export default PageHeader;
