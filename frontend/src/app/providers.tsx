@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, ReactNode, createContext, useContext } from 'react';
 import { AIProvider } from '@/contexts/AIContext';
+import { DeadlineProvider } from '@/contexts/DeadlineContext';
 
 // Contexte pour les notifications globales
 type NotificationType = 'success' | 'error' | 'info' | 'warning';
@@ -82,10 +83,12 @@ export function Providers({ children }: { children: ReactNode }) {
         value={{ notifications, showNotification, hideNotification }}
       >
         <AIProvider>
-          {children}
-          {/* Affichage des notifications */}
-          <NotificationsContainer />
-          {process.env.NODE_ENV !== 'production' && <ReactQueryDevtools initialIsOpen={false} />}
+          <DeadlineProvider>
+            {children}
+            {/* Affichage des notifications */}
+            <NotificationsContainer />
+            {process.env.NODE_ENV !== 'production' && <ReactQueryDevtools initialIsOpen={false} />}
+          </DeadlineProvider>
         </AIProvider>
       </NotificationContext.Provider>
     </QueryClientProvider>

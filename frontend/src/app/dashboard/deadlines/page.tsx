@@ -15,7 +15,8 @@ import {
   CalendarClock, 
   Edit,
   Trash2,
-  Eye
+  Eye,
+  TableIcon
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { 
@@ -182,13 +183,22 @@ export default function DeadlinesPage() {
         title="Échéances"
         description="Consultez et gérez toutes vos échéances"
         actions={
-          <Button
-            variant="primary"
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => router.push('/dashboard/deadlines/create')}
-          >
-            Nouvelle échéance
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              leftIcon={<TableIcon className="h-4 w-4" />}
+              onClick={() => router.push('/dashboard/deadlines/table')}
+            >
+              Vue tableau
+            </Button>
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={() => router.push('/dashboard/deadlines/create')}
+            >
+              Nouvelle échéance
+            </Button>
+          </div>
         }
       />
       

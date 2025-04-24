@@ -11,7 +11,8 @@ import {
   MessageSquareText,
   Settings,
   BarChart2,
-  ChevronLeft
+  ChevronLeft,
+  Table
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
@@ -35,6 +36,11 @@ export const Sidebar = ({ isCollapsed, onToggleCollapse }: SidebarProps) => {
       title: 'Échéances',
       href: '/dashboard/deadlines',
       icon: ListTodo,
+    },
+    {
+      title: 'Vue Tableau',
+      href: '/dashboard/deadlines/table',
+      icon: Table,
     },
     {
       title: 'Calendrier',
