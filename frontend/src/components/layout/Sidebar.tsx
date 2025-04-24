@@ -1,4 +1,3 @@
-// Modification du composant Sidebar pour corriger les chemins
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -36,11 +35,6 @@ export const Sidebar = ({ isCollapsed, onToggleCollapse }: SidebarProps) => {
       title: 'Échéances',
       href: '/dashboard/deadlines',
       icon: ListTodo,
-    },
-    {
-      title: 'Vue Tableau',
-      href: '/dashboard/deadlines/table',
-      icon: Table,
     },
     {
       title: 'Calendrier',
