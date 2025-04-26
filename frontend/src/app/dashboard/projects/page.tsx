@@ -26,10 +26,31 @@ export default function ProjectsPage() {
   const [showFilters, setShowFilters] = useState(false);
   
   // Utilisation du hook personnalisé pour récupérer les projets
-  const { data: projects = [], isLoading } = useProjectsList({
+  const { data: allProjects = [], isLoading } = useProjectsList({
     status: statusFilter || undefined,
     search: searchTerm || undefined,
   });
+
+  // Filtrage côté client pour garantir que les filtres fonctionnent même si l'API ne les traite pas correctement
+  const projects = React.useMemo(() => {
+    let result = [...allProjects];
+    
+    // Filtrage par terme de recherche
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      result = result.filter(project => 
+        project.name.toLowerCase().includes(search) || 
+        (project.description && project.description.toLowerCase().includes(search))
+      );
+    }
+    
+    // Filtrage par statut
+    if (statusFilter) {
+      result = result.filter(project => project.status === statusFilter);
+    }
+    
+    return result;
+  }, [allProjects, searchTerm, statusFilter]);
 
   /**
    * Obtient la variante de badge en fonction du statut du projet

@@ -37,7 +37,8 @@ export default function DeadlinesPage() {
             />
             <Button
               variant="primary"
-              className="whitespace-nowrap"
+              size="sm"
+              className="h-8 px-2 sm:px-3"
               onClick={() => router.push('/dashboard/deadlines/create')}
             >
               <Plus className="h-4 w-4 mr-0 sm:mr-2" />

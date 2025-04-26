@@ -20,7 +20,7 @@ export const getProjects = async (filters?: ProjectFilters): Promise<Project[]> 
     if (filters) {
       // Ajout de chaque filtre défini aux paramètres de requête
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
+        if (value !== undefined && value !== null && value !== '') {
           // Gestion des tableaux
           if (Array.isArray(value)) {
             value.forEach(v => params.append(key, String(v)));
