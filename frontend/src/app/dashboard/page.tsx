@@ -37,10 +37,23 @@ export default function DashboardPage() {
         title="Tableau de bord"
         description="Bienvenue sur votre espace de gestion d'échéances"
       />
+
+      {overdueDeadlines > 0 && (
+        <Card className="mt-6 bg-red-50 border-red-200 mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Clock className="h-5 w-5 text-red-500 mr-2" />
+              <p className="text-red-600">
+                <strong>Attention:</strong> Vous avez {overdueDeadlines} échéance{overdueDeadlines > 1 ? 's' : ''} en retard.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       {/* Stats Metrics */}
       <DeadlineMetrics className="mb-6" />
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Échéances à venir */}
         <DeadlineOverview limit={5} />
@@ -60,19 +73,6 @@ export default function DashboardPage() {
           />
         </div>
       </div>
-
-      {overdueDeadlines > 0 && (
-        <Card className="mt-6 bg-red-50 border-red-200">
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Clock className="h-5 w-5 text-red-500 mr-2" />
-              <p className="text-red-600">
-                <strong>Attention:</strong> Vous avez {overdueDeadlines} échéance{overdueDeadlines > 1 ? 's' : ''} en retard.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </>
   );
 }

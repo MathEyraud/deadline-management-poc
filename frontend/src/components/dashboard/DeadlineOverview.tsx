@@ -47,13 +47,18 @@ const getPriorityBadgeVariant = (priority: string) => {
  * @returns Composant DeadlineOverview
  */
 export const DeadlineOverview = ({ limit = 5 }: DeadlineOverviewProps) => {
-  // Récupérer les échéances non terminées, triées par date
-  const { data: allDeadlines = [], isLoading } = useDeadlinesList({
-    status: [DeadlineStatus.NEW, DeadlineStatus.IN_PROGRESS, DeadlineStatus.PENDING].join(','),
+  // Récupérer toutes les échéances, puis les filtrer côté client
+  const { data: allDeadlines = [], isLoading } = useDeadlinesList();
+
+  // Filtrer les échéances non terminées et non annulées côté client
+  const activeDeadlines = allDeadlines.filter(deadline => {
+    return deadline.status === DeadlineStatus.NEW || 
+           deadline.status === DeadlineStatus.IN_PROGRESS || 
+           deadline.status === DeadlineStatus.PENDING;
   });
 
   // Trier par date croissante et limiter
-  const deadlines = [...allDeadlines]
+  const deadlines = [...activeDeadlines]
     .sort((a, b) => new Date(a.deadlineDate).getTime() - new Date(b.deadlineDate).getTime())
     .slice(0, limit);
 
@@ -67,7 +72,7 @@ export const DeadlineOverview = ({ limit = 5 }: DeadlineOverviewProps) => {
   };
 
   // Calculer le nombre d'échéances en retard
-  const overdueCount = allDeadlines.filter(
+  const overdueCount = activeDeadlines.filter(
     deadline => new Date(deadline.deadlineDate) < new Date()
   ).length;
 
@@ -134,7 +139,7 @@ export const DeadlineOverview = ({ limit = 5 }: DeadlineOverviewProps) => {
             ))}
             
             <div className="pt-2">
-              <Link href="/deadlines">
+              <Link href="/dashboard/deadlines">
                 <Button variant="link" className="w-full">
                   Voir toutes les échéances
                 </Button>
