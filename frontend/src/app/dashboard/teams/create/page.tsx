@@ -11,6 +11,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, Input, Select, Button, Textarea, Badge } from '@/components/ui';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import { useTeamMutations } from '@/hooks/useTeams';
 import { useUsersList } from '@/hooks/useUsers';
 import { useNotifications } from '@/app/providers';
@@ -31,6 +32,9 @@ export default function CreateTeamPage() {
   // État local pour suivre les membres sélectionnés
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   
+  // État local pour les utilisateurs à ajouter
+  const [membersToAdd, setMembersToAdd] = useState<string[]>([]);
+  
   // Initialisation du formulaire avec React Hook Form
   const { 
     control, 
@@ -50,12 +54,21 @@ export default function CreateTeamPage() {
   const leaderId = watch('leaderId');
   
   /**
-   * Gère l'ajout d'un membre à l'équipe
-   * @param memberId - ID de l'utilisateur à ajouter
+   * Gère l'ajout des membres sélectionnés à l'équipe
    */
-  const handleAddMember = (memberId: string) => {
-    if (!selectedMembers.includes(memberId)) {
-      setSelectedMembers([...selectedMembers, memberId]);
+  const handleAddMembers = () => {
+    if (membersToAdd.length > 0) {
+      const newMembers = [...selectedMembers];
+      
+      // Ajouter uniquement les membres qui ne sont pas déjà dans la liste
+      membersToAdd.forEach(memberId => {
+        if (!newMembers.includes(memberId)) {
+          newMembers.push(memberId);
+        }
+      });
+      
+      setSelectedMembers(newMembers);
+      setMembersToAdd([]);
     }
   };
   
@@ -87,6 +100,15 @@ export default function CreateTeamPage() {
       showNotification('Erreur lors de la création de l\'équipe', 'error');
     }
   };
+  
+  // Préparer les options pour le MultiSelect
+  const memberOptions = users
+    .filter(user => !selectedMembers.includes(user.id) && user.id !== leaderId)
+    .map(user => ({
+      value: user.id,
+      label: `${user.firstName} ${user.lastName}`,
+      description: user.email
+    }));
   
   return (
     <>
@@ -179,18 +201,11 @@ export default function CreateTeamPage() {
               
               <div className="flex flex-col md:flex-row md:items-end gap-2 mb-3">
                 <div className="flex-grow">
-                  <Select
-                    options={[
-                      { value: '', label: 'Sélectionner un membre', disabled: true },
-                      ...users
-                        .filter(user => !selectedMembers.includes(user.id) && user.id !== leaderId)
-                        .map(user => ({
-                          value: user.id,
-                          label: `${user.firstName} ${user.lastName}`
-                        }))
-                    ]}
-                    onChange={(e) => e.target.value && handleAddMember(e.target.value)}
-                    value=""
+                  <MultiSelect
+                    options={memberOptions}
+                    selectedValues={membersToAdd}
+                    onChange={setMembersToAdd}
+                    placeholder="Sélectionner des membres à ajouter"
                   />
                 </div>
                 
@@ -198,20 +213,15 @@ export default function CreateTeamPage() {
                   type="button"
                   variant="outline"
                   leftIcon={<Plus className="h-4 w-4" />}
-                  onClick={() => {
-                    const select = document.querySelector('select') as HTMLSelectElement;
-                    if (select && select.value) {
-                      handleAddMember(select.value);
-                      select.value = '';
-                    }
-                  }}
+                  onClick={handleAddMembers}
+                  disabled={membersToAdd.length === 0}
                 >
                   Ajouter
                 </Button>
               </div>
               
               {/* Affichage des membres sélectionnés */}
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 mt-4">
                 {/* Afficher le chef d'équipe */}
                 {leaderId && (
                   <Badge variant="primary" className="flex items-center">
@@ -222,15 +232,16 @@ export default function CreateTeamPage() {
                 {/* Afficher les membres */}
                 {selectedMembers.map(memberId => {
                   const user = users.find(u => u.id === memberId);
-                  return (
+                  return user && (
                     <Badge 
                       key={memberId} 
                       variant="secondary"
                       className="flex items-center gap-1 pr-1"
                     >
-                      <span>
-                        {user?.firstName} {user?.lastName}
-                      </span>
+                      <div className="flex flex-col">
+                        <span>{user.firstName} {user.lastName}</span>
+                        <span className="text-xs text-slate-500">{user.email}</span>
+                      </div>
                       <button 
                         type="button"
                         onClick={() => handleRemoveMember(memberId)}

@@ -9,6 +9,7 @@ export * from './DatePicker';
 export * from './DropdownMenu';
 export * from './Input';
 export * from './Modal';
+export * from './MultiSelect';
 export * from './Pagination';
 export * from './Select';
 export * from './Textarea';

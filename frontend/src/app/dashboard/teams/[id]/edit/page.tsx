@@ -10,7 +10,8 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent, Input, Badge, Button, Textarea } from '@/components/ui';
+import { Card, CardContent, Input, Badge, Button, Textarea, Select } from '@/components/ui';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import { useTeam, useTeamMutations } from '@/hooks/useTeams';
 import { useUsersList } from '@/hooks/useUsers';
 import { useNotifications } from '@/app/providers';
@@ -33,6 +34,9 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
   
   // État local pour suivre les membres sélectionnés
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  
+  // État local pour les utilisateurs à ajouter
+  const [membersToAdd, setMembersToAdd] = useState<string[]>([]);
   
   // Récupération des mutations
   const { updateTeam, isUpdating } = useTeamMutations();
@@ -73,12 +77,21 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
   }, [team, reset]);
   
   /**
-   * Gère l'ajout d'un membre à l'équipe
-   * @param memberId - ID de l'utilisateur à ajouter
+   * Gère l'ajout des membres sélectionnés à l'équipe
    */
-  const handleAddMember = (memberId: string) => {
-    if (!selectedMembers.includes(memberId)) {
-      setSelectedMembers([...selectedMembers, memberId]);
+  const handleAddMembers = () => {
+    if (membersToAdd.length > 0) {
+      const newMembers = [...selectedMembers];
+      
+      // Ajouter uniquement les membres qui ne sont pas déjà dans la liste
+      membersToAdd.forEach(memberId => {
+        if (!newMembers.includes(memberId)) {
+          newMembers.push(memberId);
+        }
+      });
+      
+      setSelectedMembers(newMembers);
+      setMembersToAdd([]);
     }
   };
   
@@ -110,6 +123,15 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
       showNotification('Erreur lors de la mise à jour de l\'équipe', 'error');
     }
   };
+  
+  // Préparer les options pour le MultiSelect
+  const memberOptions = users
+    .filter(user => !selectedMembers.includes(user.id) && user.id !== leaderId)
+    .map(user => ({
+      value: user.id,
+      label: `${user.firstName} ${user.lastName}`,
+      description: user.email
+    }));
   
   // Afficher un indicateur de chargement pendant le chargement des données
   if (isLoadingTeam) {
@@ -196,30 +218,25 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
             />
             
             {/* Chef d'équipe */}
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Chef d'équipe
-            </label>
             <Controller
               name="leaderId"
               control={control}
               rules={{ required: 'Le chef d\'équipe est requis' }}
               render={({ field }) => (
-                <select
-                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+                <Select
+                  label="Chef d'équipe"
+                  options={[
+                    { value: '', label: 'Sélectionner un chef d\'équipe', disabled: true },
+                    ...users.map(user => ({
+                      value: user.id,
+                      label: `${user.firstName} ${user.lastName}`
+                    }))
+                  ]}
+                  error={errors.leaderId?.message}
                   {...field}
-                >
-                  <option value="" disabled>Sélectionner un chef d'équipe</option>
-                  {users.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.firstName} {user.lastName}
-                    </option>
-                  ))}
-                </select>
+                />
               )}
             />
-            {errors.leaderId && (
-              <p className="text-sm text-red-500">{errors.leaderId.message}</p>
-            )}
             
             {/* Sélection des membres */}
             <div>
@@ -229,41 +246,27 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
               
               <div className="flex flex-col md:flex-row md:items-end gap-2 mb-3">
                 <div className="flex-grow">
-                  <select
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                    onChange={(e) => e.target.value && handleAddMember(e.target.value)}
-                    value=""
-                  >
-                    <option value="" disabled>Sélectionner un membre</option>
-                    {users
-                      .filter(user => !selectedMembers.includes(user.id) && user.id !== leaderId)
-                      .map(user => (
-                        <option key={user.id} value={user.id}>
-                          {user.firstName} {user.lastName}
-                        </option>
-                      ))
-                    }
-                  </select>
+                  <MultiSelect
+                    options={memberOptions}
+                    selectedValues={membersToAdd}
+                    onChange={setMembersToAdd}
+                    placeholder="Sélectionner des membres à ajouter"
+                  />
                 </div>
                 
                 <Button
                   type="button"
                   variant="outline"
                   leftIcon={<Plus className="h-4 w-4" />}
-                  onClick={() => {
-                    const select = document.querySelector('select:not([name="leaderId"])') as HTMLSelectElement;
-                    if (select && select.value) {
-                      handleAddMember(select.value);
-                      select.value = '';
-                    }
-                  }}
+                  onClick={handleAddMembers}
+                  disabled={membersToAdd.length === 0}
                 >
                   Ajouter
                 </Button>
               </div>
               
               {/* Affichage des membres sélectionnés */}
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 mt-4">
                 {/* Afficher le chef d'équipe */}
                 {leaderId && (
                   <Badge variant="primary" className="flex items-center">
@@ -280,9 +283,10 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
                       variant="secondary"
                       className="flex items-center gap-1 pr-1"
                     >
-                      <span>
-                        {user.firstName} {user.lastName}
-                      </span>
+                      <div className="flex flex-col">
+                        <span>{user.firstName} {user.lastName}</span>
+                        <span className="text-xs text-slate-500">{user.email}</span>
+                      </div>
                       <button 
                         type="button"
                         onClick={() => handleRemoveMember(memberId)}
