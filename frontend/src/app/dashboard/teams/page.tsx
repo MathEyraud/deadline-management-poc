@@ -24,10 +24,31 @@ export default function TeamsPage() {
   const [showFilters, setShowFilters] = useState(false);
   
   // Utilisation du hook personnalisé pour récupérer les équipes
-  const { data: teams = [], isLoading } = useTeamsList({
+  const { data: allTeams = [], isLoading } = useTeamsList({
     department: departmentFilter || undefined,
     search: searchTerm || undefined,
   });
+
+  // Filtrage côté client pour garantir que les filtres fonctionnent même si l'API ne les traite pas correctement
+  const teams = React.useMemo(() => {
+    let result = [...allTeams];
+    
+    // Filtrage par terme de recherche
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      result = result.filter(team => 
+        team.name.toLowerCase().includes(search) || 
+        (team.description && team.description.toLowerCase().includes(search))
+      );
+    }
+    
+    // Filtrage par département
+    if (departmentFilter) {
+      result = result.filter(team => team.department === departmentFilter);
+    }
+    
+    return result;
+  }, [allTeams, searchTerm, departmentFilter]);
 
   /**
    * Réinitialise tous les filtres
