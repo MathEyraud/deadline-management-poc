@@ -177,6 +177,8 @@ export default function CreateProjectPage() {
                     }))
                   ]}
                   error={errors.managerId?.message}
+                  searchable={true}
+                  searchPlaceholder="Rechercher un responsable..."
                   {...field}
                 />
               )}

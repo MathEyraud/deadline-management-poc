@@ -27,13 +27,10 @@ export default function CreateTeamPage() {
   const { createTeam, isCreating } = useTeamMutations();
   
   // Récupération des utilisateurs pour sélectionner un leader et membres
-  const { data: users = [] } = useUsersList();
+  const { data: users = [], isLoading: isLoadingUsers } = useUsersList();
   
   // État local pour suivre les membres sélectionnés
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  
-  // État local pour les utilisateurs à ajouter
-  const [membersToAdd, setMembersToAdd] = useState<string[]>([]);
   
   // Initialisation du formulaire avec React Hook Form
   const { 
@@ -52,33 +49,6 @@ export default function CreateTeamPage() {
   
   // Observer l'ID du leader pour le mettre à jour
   const leaderId = watch('leaderId');
-  
-  /**
-   * Gère l'ajout des membres sélectionnés à l'équipe
-   */
-  const handleAddMembers = () => {
-    if (membersToAdd.length > 0) {
-      const newMembers = [...selectedMembers];
-      
-      // Ajouter uniquement les membres qui ne sont pas déjà dans la liste
-      membersToAdd.forEach(memberId => {
-        if (!newMembers.includes(memberId)) {
-          newMembers.push(memberId);
-        }
-      });
-      
-      setSelectedMembers(newMembers);
-      setMembersToAdd([]);
-    }
-  };
-  
-  /**
-   * Gère la suppression d'un membre de l'équipe
-   * @param memberId - ID de l'utilisateur à supprimer
-   */
-  const handleRemoveMember = (memberId: string) => {
-    setSelectedMembers(selectedMembers.filter(id => id !== memberId));
-  };
   
   /**
    * Gère la soumission du formulaire
@@ -109,6 +79,21 @@ export default function CreateTeamPage() {
       label: `${user.firstName} ${user.lastName}`,
       description: user.email
     }));
+  
+  // Récupérer les informations des membres sélectionnés pour l'affichage
+  const selectedMemberDetails = selectedMembers.map(memberId => {
+    const user = users.find(u => u.id === memberId);
+    return user ? {
+      id: user.id,
+      name: `${user.firstName} ${user.lastName}`,
+      email: user.email
+    } : null;
+  }).filter((member): member is { id: string; name: string; email: string } => member !== null);
+  
+  // Récupérer les informations du leader pour l'affichage
+  const leaderDetails = leaderId 
+    ? users.find(u => u.id === leaderId)
+    : null;
   
   return (
     <>
@@ -188,6 +173,8 @@ export default function CreateTeamPage() {
                     }))
                   ]}
                   error={errors.leaderId?.message}
+                  searchable={true}
+                  searchPlaceholder="Rechercher un chef d'équipe..."
                   {...field}
                 />
               )}
@@ -199,61 +186,46 @@ export default function CreateTeamPage() {
                 Membres de l'équipe
               </label>
               
-              <div className="flex flex-col md:flex-row md:items-end gap-2 mb-3">
-                <div className="flex-grow">
-                  <MultiSelect
-                    options={memberOptions}
-                    selectedValues={membersToAdd}
-                    onChange={setMembersToAdd}
-                    placeholder="Sélectionner des membres à ajouter"
-                  />
-                </div>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  leftIcon={<Plus className="h-4 w-4" />}
-                  onClick={handleAddMembers}
-                  disabled={membersToAdd.length === 0}
-                >
-                  Ajouter
-                </Button>
-              </div>
+              <MultiSelect
+                options={memberOptions}
+                selectedValues={selectedMembers}
+                onChange={setSelectedMembers}
+                placeholder="Sélectionner des membres à ajouter"
+                noOptionsMessage={isLoadingUsers ? "Chargement des utilisateurs..." : "Aucun utilisateur disponible"}
+                label="Membres de l'équipe"
+              />
               
               {/* Affichage des membres sélectionnés */}
               <div className="flex flex-wrap gap-2 mt-4">
                 {/* Afficher le chef d'équipe */}
-                {leaderId && (
+                {leaderDetails && (
                   <Badge variant="primary" className="flex items-center">
-                    {users.find(u => u.id === leaderId)?.firstName} {users.find(u => u.id === leaderId)?.lastName} (Chef d'équipe)
+                    {leaderDetails.firstName} {leaderDetails.lastName} (Chef d'équipe)
                   </Badge>
                 )}
                 
                 {/* Afficher les membres */}
-                {selectedMembers.map(memberId => {
-                  const user = users.find(u => u.id === memberId);
-                  return user && (
-                    <Badge 
-                      key={memberId} 
-                      variant="secondary"
-                      className="flex items-center gap-1 pr-1"
+                {selectedMemberDetails.map(member => (
+                  <Badge 
+                    key={member.id} 
+                    variant="secondary"
+                    className="flex items-center gap-1 pr-1"
+                  >
+                    <div className="flex flex-col">
+                      <span>{member.name}</span>
+                      <span className="text-xs text-slate-500">{member.email}</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setSelectedMembers(selectedMembers.filter(id => id !== member.id))}
+                      className="ml-1 rounded-full p-1 hover:bg-slate-200"
                     >
-                      <div className="flex flex-col">
-                        <span>{user.firstName} {user.lastName}</span>
-                        <span className="text-xs text-slate-500">{user.email}</span>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleRemoveMember(memberId)}
-                        className="ml-1 rounded-full p-1 hover:bg-slate-200"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  );
-                })}
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
                 
-                {!leaderId && selectedMembers.length === 0 && (
+                {!leaderDetails && selectedMemberDetails.length === 0 && (
                   <p className="text-sm text-slate-500">Aucun membre sélectionné</p>
                 )}
               </div>

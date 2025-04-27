@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, Input, Badge, Button, Textarea, Select } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/MultiSelect';
@@ -34,9 +34,6 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
   
   // État local pour suivre les membres sélectionnés
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  
-  // État local pour les utilisateurs à ajouter
-  const [membersToAdd, setMembersToAdd] = useState<string[]>([]);
   
   // Récupération des mutations
   const { updateTeam, isUpdating } = useTeamMutations();
@@ -66,42 +63,17 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
         leaderId: team.leaderId,
       });
       
-      // Initialiser les membres sélectionnés
+      // Initialiser les membres sélectionnés de manière sûre
       if (team.members) {
-        const memberIds = team.members.map(member => member.id);
+        const memberIds = team.members
+          .filter(member => member !== null)
+          .map(member => member.id);
         setSelectedMembers(memberIds);
       } else {
         setSelectedMembers([]);
       }
     }
   }, [team, reset]);
-  
-  /**
-   * Gère l'ajout des membres sélectionnés à l'équipe
-   */
-  const handleAddMembers = () => {
-    if (membersToAdd.length > 0) {
-      const newMembers = [...selectedMembers];
-      
-      // Ajouter uniquement les membres qui ne sont pas déjà dans la liste
-      membersToAdd.forEach(memberId => {
-        if (!newMembers.includes(memberId)) {
-          newMembers.push(memberId);
-        }
-      });
-      
-      setSelectedMembers(newMembers);
-      setMembersToAdd([]);
-    }
-  };
-  
-  /**
-   * Gère la suppression d'un membre de l'équipe
-   * @param memberId - ID de l'utilisateur à supprimer
-   */
-  const handleRemoveMember = (memberId: string) => {
-    setSelectedMembers(selectedMembers.filter(id => id !== memberId));
-  };
   
   /**
    * Gère la soumission du formulaire
@@ -126,12 +98,17 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
   
   // Préparer les options pour le MultiSelect
   const memberOptions = users
-    .filter(user => !selectedMembers.includes(user.id) && user.id !== leaderId)
+    .filter(user => user.id !== leaderId)
     .map(user => ({
       value: user.id,
       label: `${user.firstName} ${user.lastName}`,
       description: user.email
     }));
+  
+  // Récupérer les informations du leader pour l'affichage
+  const leaderDetails = leaderId 
+    ? users.find(u => u.id === leaderId)
+    : null;
   
   // Afficher un indicateur de chargement pendant le chargement des données
   if (isLoadingTeam) {
@@ -233,6 +210,8 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
                     }))
                   ]}
                   error={errors.leaderId?.message}
+                  searchable={true}
+                  searchPlaceholder="Rechercher un chef d'équipe..."
                   {...field}
                 />
               )}
@@ -240,68 +219,15 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
             
             {/* Sélection des membres */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Membres de l'équipe
-              </label>
-              
-              <div className="flex flex-col md:flex-row md:items-end gap-2 mb-3">
-                <div className="flex-grow">
-                  <MultiSelect
-                    options={memberOptions}
-                    selectedValues={membersToAdd}
-                    onChange={setMembersToAdd}
-                    placeholder="Sélectionner des membres à ajouter"
-                  />
-                </div>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  leftIcon={<Plus className="h-4 w-4" />}
-                  onClick={handleAddMembers}
-                  disabled={membersToAdd.length === 0}
-                >
-                  Ajouter
-                </Button>
-              </div>
-              
-              {/* Affichage des membres sélectionnés */}
-              <div className="flex flex-wrap gap-2 mt-4">
-                {/* Afficher le chef d'équipe */}
-                {leaderId && (
-                  <Badge variant="primary" className="flex items-center">
-                    {users.find(u => u.id === leaderId)?.firstName} {users.find(u => u.id === leaderId)?.lastName} (Chef d'équipe)
-                  </Badge>
-                )}
-                
-                {/* Afficher les membres */}
-                {selectedMembers.map(memberId => {
-                  const user = users.find(u => u.id === memberId);
-                  return user && (
-                    <Badge 
-                      key={memberId} 
-                      variant="secondary"
-                      className="flex items-center gap-1 pr-1"
-                    >
-                      <div className="flex flex-col">
-                        <span>{user.firstName} {user.lastName}</span>
-                        <span className="text-xs text-slate-500">{user.email}</span>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleRemoveMember(memberId)}
-                        className="ml-1 rounded-full p-1 hover:bg-slate-200"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  );
-                })}
-                
-                {!leaderId && selectedMembers.length === 0 && (
-                  <p className="text-sm text-slate-500">Aucun membre sélectionné</p>
-                )}
-              </div>
+              <MultiSelect
+                label="Membres de l'équipe"
+                options={memberOptions}
+                selectedValues={selectedMembers}
+                onChange={setSelectedMembers}
+                placeholder="Sélectionner des membres"
+                noOptionsMessage="Aucun utilisateur disponible"
+                tagsPosition="below"
+              />
             </div>
             
             {/* Bouton de soumission */}

@@ -219,6 +219,8 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
                     }))
                   ]}
                   error={errors.managerId?.message}
+                  searchable={true}
+                  searchPlaceholder="Rechercher un responsable..."
                   {...field}
                 />
               )}
