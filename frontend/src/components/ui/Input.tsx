@@ -3,7 +3,7 @@
  * Champ de saisie texte réutilisable avec support d'erreurs et d'états
  * @module components/ui/Input
  */
-import React, { InputHTMLAttributes, forwardRef } from 'react';
+import React, { InputHTMLAttributes, forwardRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -28,15 +28,31 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
  * @returns Composant Input
  */
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, label, helperText, leftAddon, rightAddon, ...props }, ref) => {
+  ({ className, error, label, helperText, leftAddon, rightAddon, onFocus, onBlur, ...props }, ref) => {
+    const [isFocused, setIsFocused] = useState(false);
+
     const inputClasses = cn(
-      "flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-      error && "border-red-500 focus:ring-red-500",
+      "flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50 transition-all focus:outline-none",
+      error 
+        ? "border-red-500 focus:border-red-500" 
+        : isFocused 
+          ? "border-blue-500 focus:border-blue-500" 
+          : "border-slate-300",
       (leftAddon || rightAddon) && "rounded-none",
       leftAddon && "rounded-r-md",
       rightAddon && "rounded-l-md",
       className
     );
+
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(true);
+      if (onFocus) onFocus(e);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(false);
+      if (onBlur) onBlur(e);
+    };
 
     return (
       <div className="space-y-1">
@@ -57,6 +73,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             className={inputClasses}
             ref={ref}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             {...props}
           />
           {rightAddon && (

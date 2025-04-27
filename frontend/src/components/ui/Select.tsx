@@ -64,8 +64,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedValue, setSelectedValue] = useState<string>(value as string || '');
+    const [isFocused, setIsFocused] = useState(false);
     const selectRef = useRef<HTMLDivElement>(null);
     const hiddenSelectRef = useRef<HTMLSelectElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     // Classes en fonction de la taille
     const sizeClasses = {
@@ -87,6 +89,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       const handleClickOutside = (event: MouseEvent) => {
         if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
           setIsOpen(false);
+          setIsFocused(false);
         }
       };
       
@@ -95,6 +98,13 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }, []);
+
+    // Focus automatique sur la barre de recherche quand le dropdown s'ouvre
+    useEffect(() => {
+      if (isOpen && searchable && searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, [isOpen, searchable]);
 
     // Mise à jour de la valeur sélectionnée quand la prop value change
     useEffect(() => {
@@ -121,11 +131,37 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       }
     };
 
+    // Gérer la navigation au clavier dans le dropdown
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (!isOpen) {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          setIsOpen(true);
+        }
+      } else {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setIsOpen(false);
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          // Logique pour naviguer vers le bas
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          // Logique pour naviguer vers le haut
+        } else if (e.key === 'Enter') {
+          // Logique pour sélectionner l'option actuelle
+        }
+      }
+    };
+
     // Implémentation personnalisée pour avoir un comportement cohérent
     const selectClasses = cn(
-      "flex w-full rounded-md border border-slate-300 bg-white",
+      "flex w-full rounded-md border transition-all",
+      isFocused 
+        ? "border-blue-500" 
+        : "border-slate-300",
       sizeClasses[size],
-      error && "border-red-500 focus-within:ring-red-500",
+      error && "border-red-500",
       className
     );
 
@@ -177,14 +213,30 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             type="button"
             className={cn(
               selectClasses,
-              "px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-between"
+              "px-3 py-2 text-left focus:outline-none bg-white disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50 flex items-center justify-between"
             )}
-            onClick={() => !props.disabled && setIsOpen(!isOpen)}
+            onClick={() => {
+              if (!props.disabled) {
+                setIsOpen(!isOpen);
+                setIsFocused(true);
+              }
+            }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={(e) => {
+              // Ne pas perdre le focus si on clique dans le dropdown
+              if (!e.relatedTarget || !selectRef.current?.contains(e.relatedTarget as Node)) {
+                if (!isOpen) {
+                  setIsFocused(false);
+                }
+              }
+            }}
+            onKeyDown={handleKeyDown}
             disabled={props.disabled}
             aria-haspopup="listbox"
             aria-expanded={isOpen}
+            aria-labelledby={label ? props.id : undefined}
           >
-            <span className="truncate">
+            <span className={cn("truncate", !selectedOption && "text-slate-400")}>
               {selectedOption ? selectedOption.label : placeholder}
             </span>
             <span className="pointer-events-none ml-2">
@@ -205,8 +257,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                   <div className="relative">
                     <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
+                      ref={searchInputRef}
                       type="text"
-                      className="w-full pl-8 pr-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-400"
+                      className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder={searchPlaceholder}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -234,6 +287,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                       onClick={() => !option.disabled && handleOptionSelect(option.value)}
                       role="option"
                       aria-selected={option.value === selectedValue}
+                      tabIndex={0}
                     >
                       {option.label}
                     </div>

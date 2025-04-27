@@ -12,20 +12,20 @@ import { cn } from '@/lib/utils';
  */
 const buttonVariants = cva(
   // Classes de base appliquées à tous les boutons
-  "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       // Variantes de type (couleur)
       variant: {
-        default: "bg-slate-900 text-white hover:bg-slate-800",
-        primary: "bg-blue-600 text-white hover:bg-blue-700",
-        secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200",
-        success: "bg-green-600 text-white hover:bg-green-700",
-        warning: "bg-amber-500 text-white hover:bg-amber-600",
-        danger: "bg-red-600 text-white hover:bg-red-700",
-        outline: "border border-slate-300 bg-transparent hover:bg-slate-100 text-slate-700",
-        ghost: "bg-transparent hover:bg-slate-100 text-slate-700",
-        link: "bg-transparent text-slate-900 underline-offset-4 hover:underline",
+        default: "bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-400",
+        primary: "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500",
+        secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200 focus-visible:ring-slate-400",
+        success: "bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500",
+        warning: "bg-amber-500 text-white hover:bg-amber-600 focus-visible:ring-amber-500",
+        danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
+        outline: "border border-slate-300 bg-transparent hover:bg-slate-100 text-slate-700 focus-visible:ring-slate-400",
+        ghost: "bg-transparent hover:bg-slate-100 text-slate-700 focus-visible:ring-slate-400",
+        link: "bg-transparent text-slate-900 underline-offset-4 hover:underline focus-visible:ring-slate-400",
       },
       // Variantes de taille
       size: {

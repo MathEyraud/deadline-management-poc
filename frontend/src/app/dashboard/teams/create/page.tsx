@@ -182,10 +182,6 @@ export default function CreateTeamPage() {
             
             {/* Sélection des membres */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Membres de l'équipe
-              </label>
-              
               <MultiSelect
                 options={memberOptions}
                 selectedValues={selectedMembers}

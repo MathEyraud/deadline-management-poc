@@ -69,13 +69,16 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Ferme le dropdown lorsqu'on clique en dehors
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setIsFocused(false);
       }
     };
     
@@ -84,6 +87,13 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+  
+  // Focus automatique sur la barre de recherche quand le dropdown s'ouvre
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isOpen]);
   
   // Filtre les options selon le terme de recherche
   const filteredOptions = options.filter(option => 
@@ -113,6 +123,21 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
     onChange([]);
     setSearchTerm('');
   };
+
+  // Gestion des touches du clavier
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+    } else {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsOpen(false);
+      }
+    }
+  };
   
   return (
     <div className="space-y-1">
@@ -132,24 +157,38 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         {/* Zone de sélection principale */}
         <div 
           className={cn(
-            "flex flex-wrap min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus-within:outline-none focus-within:ring-2 focus-within:ring-slate-400 focus-within:ring-offset-2",
-            error && "border-red-500 focus-within:ring-red-500",
+            "flex flex-wrap min-h-10 w-full rounded-md border px-3 py-2 text-sm focus-within:ring-2 transition-all",
+            isFocused 
+              ? "border-blue-500" 
+              : "border-slate-300",
+            error && "border-red-500",
             disabled && "bg-slate-100 cursor-not-allowed opacity-75"
           )}
-          onClick={() => !disabled && setIsOpen(!isOpen)}
+          onClick={() => {
+            if (!disabled) {
+              setIsOpen(!isOpen);
+              setIsFocused(true);
+            }
+          }}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-controls="multiselect-options"
         >
           {tagsPosition === 'inline' && selectedOptions.length > 0 ? (
             <div className="flex flex-wrap gap-1 items-center mr-2">
               {selectedOptions.map(option => (
                 <div 
                   key={option.value}
-                  className="bg-slate-100 text-slate-800 rounded-md px-2 py-1 text-xs flex items-center gap-1"
+                  className="bg-blue-100 text-blue-800 rounded-md px-2 py-1 text-xs flex items-center gap-1 transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <span className="truncate max-w-[150px]">{option.label}</span>
                   <button
                     type="button"
-                    className="text-slate-500 hover:text-slate-700 rounded-full"
+                    className="text-blue-500 hover:text-blue-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleOption(option.value);
@@ -165,6 +204,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
           {/* Input de recherche intégré */}
           <div className="flex-grow flex items-center">
             <input
+              ref={searchInputRef}
               type="text"
               className={cn(
                 "w-full border-0 p-0 focus:outline-none focus:ring-0 bg-transparent",
@@ -173,7 +213,12 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
               placeholder={selectedOptions.length === 0 ? placeholder : ""}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => !disabled && setIsOpen(true)}
+              onFocus={() => {
+                if (!disabled) {
+                  setIsOpen(true);
+                  setIsFocused(true);
+                }
+              }}
               disabled={disabled}
             />
           </div>
@@ -183,7 +228,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
             <div className="flex items-center gap-2 ml-auto">
               <button
                 type="button"
-                className="text-xs text-slate-500 hover:text-slate-700 underline"
+                className="text-xs text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:underline"
                 onClick={(e) => {
                   e.stopPropagation();
                   clearAll();
@@ -206,14 +251,17 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         
         {/* Dropdown */}
         {isOpen && (
-          <div className="absolute z-10 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg">
+          <div 
+            className="absolute z-10 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg overflow-hidden"
+            id="multiselect-options"
+          >
             {/* Barre de recherche */}
             <div className="p-2 border-b border-slate-100">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
-                  className="w-full pl-8 pr-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Rechercher..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -223,7 +271,12 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
             </div>
             
             {/* Liste des options */}
-            <div className={`overflow-y-auto`} style={{ maxHeight: maxDropdownHeight }}>
+            <div 
+              className="overflow-y-auto" 
+              style={{ maxHeight: maxDropdownHeight }}
+              role="listbox"
+              aria-multiselectable="true"
+            >
               {filteredOptions.length === 0 ? (
                 <div className="p-2 text-center text-sm text-slate-500">
                   {noOptionsMessage}
@@ -233,8 +286,9 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                   <div 
                     key={option.value} 
                     className={cn(
-                      "px-2 py-1.5 hover:bg-slate-100 cursor-pointer flex items-center",
-                      option.disabled && "opacity-50 cursor-not-allowed"
+                      "px-3 py-2 hover:bg-slate-100 cursor-pointer flex items-center transition-colors",
+                      option.disabled && "opacity-50 cursor-not-allowed",
+                      selectedValues.includes(option.value) && "bg-blue-50"
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -242,10 +296,13 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                         toggleOption(option.value);
                       }
                     }}
+                    role="option"
+                    aria-selected={selectedValues.includes(option.value)}
+                    tabIndex={0}
                   >
                     <div className="mr-2 flex-shrink-0">
                       <div className={cn(
-                        "w-4 h-4 border rounded flex items-center justify-center",
+                        "w-4 h-4 rounded-sm flex items-center justify-center border transition-colors",
                         selectedValues.includes(option.value) 
                           ? "border-blue-500 bg-blue-500" 
                           : "border-slate-300"
@@ -268,11 +325,11 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
             
             {/* Footer avec statistiques de sélection */}
             {selectedOptions.length > 0 && (
-              <div className="p-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between">
+              <div className="p-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between bg-slate-50">
                 <span>{selectedOptions.length} élément{selectedOptions.length > 1 ? 's' : ''} sélectionné{selectedOptions.length > 1 ? 's' : ''}</span>
                 <button
                   type="button"
-                  className="text-blue-600 hover:text-blue-800 underline"
+                  className="text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:underline"
                   onClick={() => clearAll()}
                 >
                   Tout désélectionner
@@ -288,17 +345,17 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
             {selectedOptions.map(option => (
               <div 
                 key={option.value}
-                className="bg-slate-100 text-slate-800 rounded-md pl-2 pr-1 py-1 text-sm flex items-center"
+                className="bg-blue-100 text-blue-800 rounded-md pl-2 pr-1 py-1 text-sm flex items-center transition-colors"
               >
                 <div className="flex flex-col mr-1">
                   <span>{option.label}</span>
                   {option.description && (
-                    <span className="text-xs text-slate-500">{option.description}</span>
+                    <span className="text-xs text-blue-500">{option.description}</span>
                   )}
                 </div>
                 <button
                   type="button"
-                  className="text-slate-500 hover:text-slate-700 rounded-full p-1"
+                  className="text-blue-500 hover:text-blue-700 rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleOption(option.value);
@@ -311,7 +368,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
             {selectedOptions.length > 0 && (
               <button
                 type="button"
-                className="text-xs text-slate-500 hover:text-slate-700 underline self-end"
+                className="text-xs text-blue-600 hover:text-blue-800 underline self-end focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1"
                 onClick={() => clearAll()}
               >
                 Tout désélectionner

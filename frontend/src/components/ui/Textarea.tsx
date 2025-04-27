@@ -3,7 +3,7 @@
  * Champ de saisie multi-lignes avec support d'erreurs et d'états
  * @module components/ui/Textarea
  */
-import React, { TextareaHTMLAttributes, forwardRef } from 'react';
+import React, { TextareaHTMLAttributes, forwardRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -24,7 +24,19 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
  * @returns Composant Textarea
  */
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, error, label, helperText, ...props }, ref) => {
+  ({ className, error, label, helperText, onFocus, onBlur, ...props }, ref) => {
+    const [isFocused, setIsFocused] = useState(false);
+
+    const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      setIsFocused(true);
+      if (onFocus) onFocus(e);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      setIsFocused(false);
+      if (onBlur) onBlur(e);
+    };
+
     return (
       <div className="space-y-1">
         {label && (
@@ -37,11 +49,17 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         )}
         <textarea
           className={cn(
-            "flex min-h-[80px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-            error && "border-red-500 focus:ring-red-500",
+            "flex min-h-[80px] w-full rounded-md border bg-white px-3 py-2 text-sm placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50 transition-all focus:outline-none",
+            error 
+              ? "border-red-500 focus:border-red-500" 
+              : isFocused 
+                ? "border-blue-500 focus:border-blue-500" 
+                : "border-slate-300",
             className
           )}
           ref={ref}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           {...props}
         />
         {(error || helperText) && (
