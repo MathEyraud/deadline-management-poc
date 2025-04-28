@@ -105,6 +105,21 @@ export const addTeamMember = async (teamId: string, userId: string): Promise<Tea
 };
 
 /**
+ * Ajoute plusieurs membres à une équipe en une seule opération
+ * @param teamId - ID de l'équipe
+ * @param memberIds - IDs des utilisateurs à ajouter
+ * @returns L'équipe mise à jour
+ */
+export const addTeamMembers = async (teamId: string, memberIds: string[]): Promise<Team> => {
+  try {
+    const response = await api.post<Team>(`/teams/${teamId}/members`, { memberIds });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
  * Retire un membre d'une équipe
  * @param teamId - ID de l'équipe
  * @param userId - ID de l'utilisateur à retirer
@@ -126,5 +141,6 @@ export default {
   updateTeam,
   deleteTeam,
   addTeamMember,
+  addTeamMembers,
   removeTeamMember,
 };

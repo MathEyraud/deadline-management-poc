@@ -31,8 +31,8 @@ import {
 import { useTeam, useTeamMutations } from '@/hooks/useTeams';
 import { useUsersList } from '@/hooks/useUsers';
 import { useProjectsByTeam } from '@/hooks/useProjects';
-import { formatDateTime } from '@/lib/utils';
 import { useNotifications } from '@/app/providers';
+import { AddTeamMembersModal } from '@/components/team';
 import Link from 'next/link';
 
 /**
@@ -50,6 +50,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   // États locaux pour les modales
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [isAddMultipleMembersModalOpen, setIsAddMultipleMembersModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   
   // Récupération des données de l'équipe
@@ -68,7 +69,9 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     addTeamMember,
     isAddingMember,
     removeTeamMember,
-    isRemovingMember
+    isRemovingMember,
+    addTeamMembers,
+    isAddingMembers
   } = useTeamMutations();
   
   /**
@@ -100,6 +103,22 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     } catch (error) {
       console.error('Erreur lors de l\'ajout du membre:', error);
       showNotification('Erreur lors de l\'ajout du membre', 'error');
+    }
+  };
+  
+  /**
+   * Gère l'ajout de plusieurs membres à l'équipe
+   * @param memberIds - IDs des utilisateurs à ajouter
+   */
+  const handleAddMultipleMembers = async (memberIds: string[]) => {
+    try {
+      await addTeamMembers(id, memberIds);
+      showNotification(`${memberIds.length} membre(s) ajouté(s) avec succès`, 'success');
+      setIsAddMultipleMembersModalOpen(false);
+      refetch();
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout des membres:', error);
+      showNotification('Erreur lors de l\'ajout des membres', 'error');
     }
   };
   
@@ -246,8 +265,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
               
               {/* Date de création */}
               <div>
-              <h3 className="text-sm font-medium text-gray-500">Détails</h3>
-              <p className="mt-1">ID: {team.id}</p>
+                <h3 className="text-sm font-medium text-gray-500">Détails</h3>
+                <p className="mt-1">ID: {team.id}</p>
               </div>
             </div>
           </CardContent>
@@ -259,27 +278,48 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Membres de l'équipe</CardTitle>
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<UserPlus className="h-4 w-4" />}
-              onClick={() => setIsAddMemberModalOpen(true)}
-              disabled={availableUsers.length === 0}
-            >
-              Ajouter un membre
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<UserPlus className="h-4 w-4" />}
+                onClick={() => setIsAddMemberModalOpen(true)}
+                disabled={availableUsers.length === 0}
+              >
+                Ajouter un membre
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Users className="h-4 w-4" />}
+                onClick={() => setIsAddMultipleMembersModalOpen(true)}
+                disabled={availableUsers.length === 0}
+              >
+                Ajouter plusieurs
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {!team.members || team.members.length === 0 ? (
               <div className="text-center py-6 text-slate-500">
                 <p>Aucun membre dans cette équipe</p>
                 {availableUsers.length > 0 && (
-                  <Button 
-                    variant="link"
-                    onClick={() => setIsAddMemberModalOpen(true)}
-                  >
-                    Ajouter un membre
-                  </Button>
+                  <div className="mt-4 flex space-x-2 justify-center">
+                    <Button 
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setIsAddMemberModalOpen(true)}
+                    >
+                      Ajouter un membre
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsAddMultipleMembersModalOpen(true)}
+                    >
+                      Ajouter plusieurs membres
+                    </Button>
+                  </div>
                 )}
               </div>
             ) : (
@@ -447,6 +487,17 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           />
         </div>
       </Modal>
+      
+      {/* Modal pour ajouter plusieurs membres */}
+      <AddTeamMembersModal
+        isOpen={isAddMultipleMembersModalOpen}
+        onClose={() => setIsAddMultipleMembersModalOpen(false)}
+        teamId={id}
+        existingMemberIds={team.members?.map(member => member.id) || []}
+        leaderId={team.leaderId}
+        onMembersAdded={handleAddMultipleMembers}
+        isLoading={isAddingMembers}
+      />
     </>
   );
 }

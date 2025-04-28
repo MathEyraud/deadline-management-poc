@@ -8,9 +8,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent, Input, Badge, Button, Textarea, Select } from '@/components/ui';
+import { Card, CardContent, Input, Button, Textarea, Select } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { useTeam, useTeamMutations } from '@/hooks/useTeams';
 import { useUsersList } from '@/hooks/useUsers';
@@ -66,7 +66,7 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
       // Initialiser les membres sélectionnés de manière sûre
       if (team.members) {
         const memberIds = team.members
-          .filter(member => member !== null)
+          .filter(member => member !== null && member.id !== team.leaderId) // Exclure le leader des membres
           .map(member => member.id);
         setSelectedMembers(memberIds);
       } else {
@@ -226,8 +226,57 @@ export default function EditTeamPage({ params }: { params: { id: string } }) {
                 onChange={setSelectedMembers}
                 placeholder="Sélectionner des membres"
                 noOptionsMessage="Aucun utilisateur disponible"
-                tagsPosition="below"
+                tagsPosition="inline"
               />
+              
+              {/* Affichage unifié du chef d'équipe et des membres sélectionnés */}
+              <div className="mt-4">
+                <p className="text-sm font-medium text-slate-700 mb-2">Composition de l'équipe:</p>
+                <div className="flex flex-wrap gap-2">
+                  {/* Chef d'équipe en rouge */}
+                  {leaderId && leaderDetails && (
+                    <div 
+                      className="bg-red-100 text-red-800 rounded-md pl-2 pr-1 py-1 text-sm flex items-center"
+                    >
+                      <div className="flex flex-col mr-1">
+                        <span>{leaderDetails.firstName} {leaderDetails.lastName}</span>
+                        <span className="text-xs text-red-600">Chef d'équipe</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Membres en bleu */}
+                  {selectedMembers.map(memberId => {
+                    const member = users.find(u => u.id === memberId);
+                    if (!member) return null;
+                    
+                    return (
+                      <div 
+                        key={member.id}
+                        className="bg-blue-100 text-blue-800 rounded-md pl-2 pr-1 py-1 text-sm flex items-center"
+                      >
+                        <div className="flex flex-col mr-1">
+                          <span>{member.firstName} {member.lastName}</span>
+                          <span className="text-xs text-blue-500">{member.email}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="text-blue-500 hover:text-blue-700 rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          onClick={() => {
+                            setSelectedMembers(selectedMembers.filter(id => id !== member.id));
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  
+                  {!leaderId && selectedMembers.length === 0 && (
+                    <p className="text-sm text-slate-500">Aucun membre sélectionné</p>
+                  )}
+                </div>
+              </div>
             </div>
             
             {/* Bouton de soumission */}

@@ -105,6 +105,21 @@ export function useTeamMutations() {
       queryClient.invalidateQueries({ queryKey: teamsKeys.lists() });
     },
   });
+
+  // Mutation pour ajouter plusieurs membres à une équipe
+  const addTeamMembersMutation = useMutation({
+    mutationFn: ({ teamId, memberIds }: { teamId: string; memberIds: string[] }) => 
+      teamsService.addTeamMembers(teamId, memberIds),
+    onSuccess: (updatedTeam) => {
+      // Mise à jour du cache pour l'équipe modifiée
+      queryClient.setQueryData(
+        teamsKeys.detail(updatedTeam.id),
+        updatedTeam
+      );
+      // Invalide les listes qui pourraient contenir cette équipe
+      queryClient.invalidateQueries({ queryKey: teamsKeys.lists() });
+    },
+  });
   
   // Mutation pour retirer un membre d'une équipe
   const removeTeamMemberMutation = useMutation({
@@ -138,6 +153,10 @@ export function useTeamMutations() {
       (teamId: string, userId: string) => addTeamMemberMutation.mutateAsync({ teamId, userId }),
       [addTeamMemberMutation]
     ),
+    addTeamMembers: useCallback(
+      (teamId: string, memberIds: string[]) => addTeamMembersMutation.mutateAsync({ teamId, memberIds }),
+      [addTeamMembersMutation]
+    ),
     removeTeamMember: useCallback(
       (teamId: string, userId: string) => removeTeamMemberMutation.mutateAsync({ teamId, userId }),
       [removeTeamMemberMutation]
@@ -146,11 +165,13 @@ export function useTeamMutations() {
     isUpdating: updateTeamMutation.isPending,
     isDeleting: deleteTeamMutation.isPending,
     isAddingMember: addTeamMemberMutation.isPending,
+    isAddingMembers: addTeamMembersMutation.isPending,
     isRemovingMember: removeTeamMemberMutation.isPending,
     createError: createTeamMutation.error,
     updateError: updateTeamMutation.error,
     deleteError: deleteTeamMutation.error,
     addMemberError: addTeamMemberMutation.error,
+    addMembersError: addTeamMembersMutation.error,
     removeMemberError: removeTeamMemberMutation.error,
   };
 }

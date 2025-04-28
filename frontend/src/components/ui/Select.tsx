@@ -4,6 +4,7 @@
  * @module components/ui/Select
  */
 import React, { SelectHTMLAttributes, forwardRef, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -65,6 +66,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedValue, setSelectedValue] = useState<string>(value as string || '');
     const [isFocused, setIsFocused] = useState(false);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+    const [isMounted, setIsMounted] = useState(false);
+    
     const selectRef = useRef<HTMLDivElement>(null);
     const hiddenSelectRef = useRef<HTMLSelectElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +80,12 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       lg: 'h-12 text-base',
     };
 
+    // Vérifier si le DOM est disponible pour créer le portail
+    useEffect(() => {
+      setIsMounted(true);
+      return () => setIsMounted(false);
+    }, []);
+
     // Filtrer les options en fonction du terme de recherche
     const filteredOptions = options.filter(option => 
       option.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -84,12 +94,29 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     // Trouver l'option actuellement sélectionnée
     const selectedOption = options.find(option => option.value === selectedValue);
 
+    // Calculer la position du dropdown
+    useEffect(() => {
+      if (isOpen && selectRef.current) {
+        const rect = selectRef.current.getBoundingClientRect();
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width
+        });
+      }
+    }, [isOpen]);
+
     // Gérer le clic à l'extérieur pour fermer le dropdown
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
+        // Ne pas fermer si on clique sur le select lui-même
         if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
-          setIsOpen(false);
-          setIsFocused(false);
+          // Vérifier si le clic est dans le dropdown (qui est en dehors de la hiérarchie DOM normale)
+          const dropdownElement = document.getElementById('select-dropdown');
+          if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+            setIsOpen(false);
+            setIsFocused(false);
+          }
         }
       };
       
@@ -152,6 +179,70 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           // Logique pour sélectionner l'option actuelle
         }
       }
+    };
+
+    // Rendu du dropdown via un portail
+    const renderDropdown = () => {
+      if (!isOpen || !isMounted) return null;
+      
+      const dropdownContent = (
+        <div 
+          id="select-dropdown"
+          className="z-50 rounded-md border border-slate-200 bg-white shadow-lg overflow-hidden"
+          style={{
+            position: 'absolute',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+          }}
+        >
+          {/* Barre de recherche (visible uniquement si searchable est true) */}
+          {searchable && (
+            <div className="p-2 border-b border-slate-100">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder={searchPlaceholder}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Liste des options */}
+          <div className="max-h-60 overflow-y-auto py-1" role="listbox">
+            {(searchable ? filteredOptions : options).length === 0 ? (
+              <div className="px-3 py-2 text-center text-sm text-slate-500">
+                Aucun résultat trouvé
+              </div>
+            ) : (
+              (searchable ? filteredOptions : options).map((option) => (
+                <div 
+                  key={option.value} 
+                  className={cn(
+                    "px-3 py-2 hover:bg-slate-100 cursor-pointer",
+                    option.disabled && "opacity-50 cursor-not-allowed",
+                    option.value === selectedValue && "bg-blue-50 text-blue-700 font-medium"
+                  )}
+                  onClick={() => !option.disabled && handleOptionSelect(option.value)}
+                  role="option"
+                  aria-selected={option.value === selectedValue}
+                  tabIndex={0}
+                >
+                  {option.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      );
+      
+      return createPortal(dropdownContent, document.body);
     };
 
     // Implémentation personnalisée pour avoir un comportement cohérent
@@ -248,54 +339,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             </span>
           </button>
           
-          {/* Dropdown */}
-          {isOpen && (
-            <div className="absolute z-10 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg">
-              {/* Barre de recherche (visible uniquement si searchable est true) */}
-              {searchable && (
-                <div className="p-2 border-b border-slate-100">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder={searchPlaceholder}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Liste des options */}
-              <div className="max-h-60 overflow-y-auto py-1" role="listbox">
-                {(searchable ? filteredOptions : options).length === 0 ? (
-                  <div className="px-3 py-2 text-center text-sm text-slate-500">
-                    Aucun résultat trouvé
-                  </div>
-                ) : (
-                  (searchable ? filteredOptions : options).map((option) => (
-                    <div 
-                      key={option.value} 
-                      className={cn(
-                        "px-3 py-2 hover:bg-slate-100 cursor-pointer",
-                        option.disabled && "opacity-50 cursor-not-allowed",
-                        option.value === selectedValue && "bg-blue-50 text-blue-700 font-medium"
-                      )}
-                      onClick={() => !option.disabled && handleOptionSelect(option.value)}
-                      role="option"
-                      aria-selected={option.value === selectedValue}
-                      tabIndex={0}
-                    >
-                      {option.label}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+          {/* Dropdown rendu via portail */}
+          {renderDropdown()}
         </div>
         
         {(error || helperText) && (
