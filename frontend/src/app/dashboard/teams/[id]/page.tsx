@@ -477,6 +477,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             label="Utilisateur"
             value={selectedUserId}
             onChange={(e) => setSelectedUserId(e.target.value)}
+            searchable={true}
             options={[
               { value: '', label: 'Sélectionner un utilisateur', disabled: true },
               ...availableUsers.map(user => ({
