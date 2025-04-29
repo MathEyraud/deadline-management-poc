@@ -4,6 +4,7 @@
  * @module api/client
  */
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import { getReadableErrorMessage } from './errorHandler';
 
 /**
  * URL de base de l'API backend
@@ -66,6 +67,15 @@ const createAPIClient = (): AxiosInstance => {
             window.location.href = '/login';
           }
         }
+      }
+      
+      // Gestion des erreurs 403 (accès refusé) spécifiques aux échéances
+      else if (error.response?.status === 403 && 
+               error.config?.url?.includes('deadlines')) {
+        // Nous laissons la gestion spécifique aux hooks individuels
+        // Mais nous pouvons logger l'erreur ou ajouter une logique commune ici
+        console.warn('Accès refusé à une ressource protégée:', 
+          getReadableErrorMessage(error));
       }
       
       return Promise.reject(error);

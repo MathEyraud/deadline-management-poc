@@ -96,7 +96,10 @@ export const DeadlineOverview = ({ limit = 5 }: DeadlineOverviewProps) => {
           </div>
         ) : deadlines.length === 0 ? (
           <div className="text-center py-6 text-slate-500">
-            <p>Aucune échéance à venir</p>
+            <p className="mb-2">Aucune échéance à venir.</p>
+            <p className="text-xs text-slate-400">
+              Note: Seules les échéances auxquelles vous avez accès sont affichées.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">

@@ -17,6 +17,7 @@ import { formatDateTime } from '@/lib/utils';
 import { DeadlineForm } from '@/components/deadline/DeadlineForm';
 import { useNotifications } from '@/app/providers';
 import DeadlinePrediction from '@/components/deadline/DeadlinePrediction';
+import VisibilityIndicator from '@/components/deadline/VisibilityIndicator';
 
 /**
  * Page de détail d'une échéance
@@ -152,7 +153,7 @@ export default function DeadlineDetailPage({ params }: { params: { id: string } 
                   <p className="mt-1">{formatDateTime(deadline.deadlineDate)}</p>
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Priorité</h3>
@@ -170,11 +171,16 @@ export default function DeadlineDetailPage({ params }: { params: { id: string } 
                 
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Visibilité</h3>
-                  <Badge className="mt-1" variant="outline">
-                    {deadline.visibility}
-                  </Badge>
+                  <VisibilityIndicator
+                    className="mt-1" 
+                    visibility={deadline.visibility} 
+                    showLabel={true}
+                    size="lg"
+                  />
                 </div>
+                
               </div>
+
             </div>
           </CardContent>
         </Card>

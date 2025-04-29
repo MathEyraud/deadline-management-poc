@@ -45,10 +45,26 @@ const statusOptions = [
  * Options pour le select de visibilité
  */
 const visibilityOptions = [
-  { value: DeadlineVisibility.PRIVATE, label: 'Privée' },
-  { value: DeadlineVisibility.TEAM, label: 'Équipe' },
-  { value: DeadlineVisibility.DEPARTMENT, label: 'Département' },
-  { value: DeadlineVisibility.ORGANIZATION, label: 'Organisation' },
+  { 
+    value: DeadlinePriority.LOW, 
+    label: 'Basse' 
+  },
+  { 
+    value: DeadlineVisibility.PRIVATE, 
+    label: 'Privée - Visible uniquement par vous' 
+  },
+  { 
+    value: DeadlineVisibility.TEAM, 
+    label: 'Équipe - Visible par les membres de l\'équipe' 
+  },
+  { 
+    value: DeadlineVisibility.DEPARTMENT, 
+    label: 'Département - Visible par tout le département' 
+  },
+  { 
+    value: DeadlineVisibility.ORGANIZATION, 
+    label: 'Organisation - Visible par toute l\'organisation' 
+  },
 ];
 
 /**
@@ -244,12 +260,18 @@ export const DeadlineForm = ({
         control={control}
         rules={{ required: 'La visibilité est obligatoire' }}
         render={({ field }) => (
-          <Select
-            {...field}
-            label="Visibilité"
-            options={visibilityOptions}
-            error={errors.visibility?.message}
-          />
+          <div className="space-y-2">
+            <Select
+              {...field}
+              label="Visibilité"
+              options={visibilityOptions}
+              error={errors.visibility?.message}
+            />
+            <p className="text-sm text-slate-500 italic">
+              Le niveau de visibilité détermine qui peut voir et accéder à cette échéance.
+              Choisissez le niveau approprié en fonction de la sensibilité des informations.
+            </p>
+          </div>
         )}
       />
       

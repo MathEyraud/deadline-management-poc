@@ -26,6 +26,7 @@ import { useNotifications } from '@/app/providers';
 import { formatDate } from '@/lib/utils';
 import { DeadlinePriority, DeadlineStatus } from '@/types';
 import { useDeadlineContext } from '@/contexts/DeadlineContext';
+import VisibilityIndicator from './VisibilityIndicator';
 
 /**
  * Composant DeadlinesList - Affiche les échéances sous forme de liste de cartes
@@ -201,14 +202,20 @@ export default function DeadlinesList() {
               <div className="flex flex-col md:flex-row justify-between gap-4">
                 {/* Informations principales */}
                 <div className="flex-grow">
-                  <div className="flex flex-wrap gap-2 items-center mb-2">
-                    <h3 className="font-medium text-lg">{deadline.title}</h3>
+
+                  <h3 className="font-medium text-lg">{deadline.title}</h3>
+                  
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
                     <Badge variant={getPriorityBadgeVariant(deadline.priority)}>
                       {deadline.priority}
                     </Badge>
                     <Badge variant={getStatusBadgeVariant(deadline.status)}>
                       {deadline.status}
                     </Badge>
+                    <VisibilityIndicator
+                      visibility={deadline.visibility} 
+                      showLabel={true}
+                    />
                   </div>
                   
                   {deadline.description && (

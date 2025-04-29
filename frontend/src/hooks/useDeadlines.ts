@@ -6,6 +6,9 @@ import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { deadlinesService } from '../lib/api';
 import { Deadline, DeadlineFilters, CreateDeadlineDto, UpdateDeadlineDto } from '../types';
+import { useNotifications } from '@/app/providers';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 /**
  * Clés de cache pour React Query
@@ -42,10 +45,32 @@ export function useDeadlinesList(filters?: DeadlineFilters, enabled: boolean = t
  * @returns Données et états de la requête
  */
 export function useDeadline(id: string, enabled: boolean = true) {
-  return useQuery({
+  const router = useRouter();
+  const { showNotification } = useNotifications();
+  
+  return useQuery<Deadline, Error>({
     queryKey: deadlinesKeys.detail(id),
-    queryFn: () => deadlinesService.getDeadlineById(id),
+    queryFn: async () => {
+      try {
+        return await deadlinesService.getDeadlineById(id);
+      } catch (error) {
+        // Vérifier si c'est une erreur d'autorisation (403)
+        if (axios.isAxiosError(error) && error.response?.status === 403) {
+          showNotification("Vous n'avez pas accès à cette échéance", 'error');
+          router.push('/dashboard/deadlines');
+        }
+        throw error; // Propager l'erreur pour que useQuery la gère
+      }
+    },
     enabled: !!id && enabled,
+    retry: (failureCount, error) => {
+      // Ne pas réessayer pour les erreurs 403
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        return false;
+      }
+      // Pour les autres erreurs, essayer jusqu'à 3 fois
+      return failureCount < 3;
+    }
   });
 }
 

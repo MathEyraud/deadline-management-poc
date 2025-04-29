@@ -52,6 +52,7 @@ export enum ErrorType {
  * @returns Erreur API normalisée
  */
 export const handleApiError = (error: unknown): ApiError => {
+  
   // Cas d'une erreur Axios
   if (error instanceof AxiosError && error.response) {
     const { status, data } = error.response;
@@ -96,6 +97,42 @@ export const handleApiError = (error: unknown): ApiError => {
       originalError: error
     };
   }
+
+  // Gestion spécifique des erreurs 403 pour les échéances
+  if (error instanceof AxiosError && error.response) {
+    const { status, data } = error.response;
+    
+    // Gestion spécifique des erreurs 403 pour les échéances
+    if (status === 403) {
+      // Si le chemin contient 'deadlines', c'est probablement une restriction d'accès à une échéance
+      const isDeadlineAccess = error.config?.url?.includes('deadlines');
+      
+      return {
+        status,
+        message: isDeadlineAccess 
+          ? "Vous n'avez pas accès à cette échéance" 
+          : (typeof data === 'object' && data && 'message' in data 
+              ? String(data.message) 
+              : "Accès non autorisé"),
+        errorName: ErrorType.FORBIDDEN,
+        path: typeof data === 'object' && data && 'path' in data ? String(data.path) : undefined,
+        originalError: error
+      };
+    }
+    
+    // Si le backend a renvoyé une structure d'erreur conforme
+    if (data && typeof data === 'object') {
+      return {
+        status,
+        message: 'message' in data ? String(data.message) : 'Une erreur s\'est produite',
+        path: 'path' in data ? String(data.path) : undefined,
+        timestamp: 'timestamp' in data ? String(data.timestamp) : undefined,
+        errorName: 'errorName' in data ? String(data.errorName) : undefined,
+        errorCode: 'errorCode' in data ? String(data.errorCode) : undefined,
+        originalError: error
+      };
+    }
+  }
   
   // Autres types d'erreurs
   return {
@@ -123,7 +160,7 @@ export const getReadableErrorMessage = (error: ApiError | unknown): string => {
     case 401:
       return 'Vous devez vous connecter pour accéder à cette ressource';
     case 403:
-      return 'Vous n\'avez pas les permissions nécessaires pour cette action';
+      return apiError.message || 'Vous n\'avez pas les permissions nécessaires pour cette action';
     case 404:
       return `Ressource non trouvée: ${apiError.message}`;
     case 409:

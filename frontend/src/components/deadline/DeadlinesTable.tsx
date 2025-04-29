@@ -36,6 +36,7 @@ import {
 import ConfirmDialog from '../ui/ConfirmDialog';
 import Pagination from '../ui/Pagination';
 import { useDeadlineContext } from '@/contexts/DeadlineContext';
+import VisibilityIndicator from './VisibilityIndicator';
 
 /**
  * Type pour la configuration de tri
@@ -64,53 +65,6 @@ export default function DeadlinesTable() {
 
   // Mutation pour la suppression
   const { deleteDeadline, isDeleting } = useDeadlineMutations();
-
-  // Colonnes du tableau
-  const columns = [
-    { key: 'title', label: 'Titre', sortable: true },
-    { key: 'status', label: 'Statut', sortable: true },
-    { key: 'priority', label: 'Priorité', sortable: true },
-    { key: 'deadlineDate', label: 'Date d\'échéance', sortable: true },
-    { key: 'visibility', label: 'Visibilité', sortable: true },
-    { key: 'project', label: 'Projet', sortable: true },
-    { key: 'creator', label: 'Créateur', sortable: true },
-    { key: 'actions', label: 'Actions', sortable: false }
-  ];
-
-  /**
-   * Gère le clic sur l'en-tête de colonne pour trier
-   * @param key - Clé de tri
-   */
-  const handleSort = (key: string) => {
-    // Si c'est la même colonne, on inverse l'ordre
-    if (sortConfig.key === key) {
-      setSortConfig({
-        key: key,
-        direction: sortConfig.direction === 'asc' ? 'desc' : 'asc'
-      });
-    } else {
-      // Sinon, on trie par défaut en ordre ascendant
-      setSortConfig({
-        key: key,
-        direction: 'asc'
-      });
-    }
-  };
-
-  /**
-   * Obtient l'icône de tri pour la colonne
-   * @param key - Clé de la colonne
-   * @returns Icône de tri appropriée
-   */
-  const getSortIcon = (key: string) => {
-    if (sortConfig.key !== key) {
-      return <ArrowUpDown className="h-4 w-4" />;
-    }
-    
-    return sortConfig.direction === 'asc' 
-      ? <ArrowUp className="h-4 w-4" /> 
-      : <ArrowDown className="h-4 w-4" />;
-  };
 
   /**
    * Obtient la variante de badge en fonction de la priorité
@@ -170,6 +124,192 @@ export default function DeadlinesTable() {
       console.error('Erreur lors de la suppression:', error);
       showNotification('Erreur lors de la suppression', 'error');
     }
+  };
+
+  /**
+   * Ouvre la modale de suppression
+   * @param id - ID de l'échéance à supprimer
+   */
+  const openDeleteModal = (id: string) => {
+    setDeleteId(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  /**
+   * Redirige vers la page de détail
+   * @param id - ID de l'échéance
+   */
+  const navigateToDetail = (id: string) => {
+    router.push(`/dashboard/deadlines/${id}`);
+  };
+
+  /**
+   * Redirige vers la page d'édition
+   * @param id - ID de l'échéance
+   */
+  const navigateToEdit = (id: string) => {
+    router.push(`/dashboard/deadlines/${id}?edit=true`);
+  };
+
+  // Définition des colonnes du tableau avec rendu personnalisé
+  const columns = [
+    { 
+      key: 'title', 
+      label: 'Titre', 
+      sortable: true,
+      cell: (deadline: Deadline) => (
+        <span className="text-slate-900 max-w-xs truncate">
+          {deadline.title}
+        </span>
+      )
+    },
+    { 
+      key: 'status', 
+      label: 'Statut', 
+      sortable: true,
+      cell: (deadline: Deadline) => (
+        <Badge variant={getStatusBadgeVariant(deadline.status)}>
+          {deadline.status}
+        </Badge>
+      )
+    },
+    { 
+      key: 'priority', 
+      label: 'Priorité', 
+      sortable: true,
+      cell: (deadline: Deadline) => (
+        <Badge variant={getPriorityBadgeVariant(deadline.priority)}>
+          {deadline.priority}
+        </Badge>
+      )
+    },
+    { 
+      key: 'deadlineDate', 
+      label: 'Date d\'échéance', 
+      sortable: true,
+      cell: (deadline: Deadline) => (
+        <div className="flex items-center">
+          <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
+          <span className={
+            new Date(deadline.deadlineDate) < new Date() &&
+            deadline.status !== DeadlineStatus.COMPLETED &&
+            deadline.status !== DeadlineStatus.CANCELLED
+              ? "text-red-500 font-medium"
+              : "text-slate-500"
+          }>
+            {formatDate(deadline.deadlineDate)}
+          </span>
+        </div>
+      )
+    },
+    { 
+      key: 'visibility', 
+      label: 'Visibilité', 
+      sortable: true,
+      cell: (deadline: Deadline) => (
+        <VisibilityIndicator 
+          visibility={deadline.visibility} 
+          showLabel={true}
+        />
+      )
+    },
+    { 
+      key: 'project', 
+      label: 'Projet', 
+      sortable: true,
+      cell: (deadline: Deadline) => (
+        <div className="flex items-center text-slate-500">
+          <Folder className="h-4 w-4 mr-1 flex-shrink-0" />
+          <span>{deadline.project?.name || '-'}</span>
+        </div>
+      )
+    },
+    { 
+      key: 'creator', 
+      label: 'Créateur', 
+      sortable: true,
+      cell: (deadline: Deadline) => (
+        <div className="flex items-center text-slate-500">
+          <UserCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+          <span>
+            {deadline.creator 
+              ? `${deadline.creator.firstName} ${deadline.creator.lastName}`
+              : '-'
+            }
+          </span>
+        </div>
+      )
+    },
+    { 
+      key: 'actions', 
+      label: 'Actions', 
+      sortable: false,
+      cell: (deadline: Deadline) => (
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigateToDetail(deadline.id)}
+            title="Voir les détails"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigateToEdit(deadline.id)}
+            title="Modifier"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openDeleteModal(deadline.id)}
+            title="Supprimer"
+          >
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  /**
+   * Gère le clic sur l'en-tête de colonne pour trier
+   * @param key - Clé de tri
+   */
+  const handleSort = (key: string) => {
+    // Si c'est la même colonne, on inverse l'ordre
+    if (sortConfig.key === key) {
+      setSortConfig({
+        key: key,
+        direction: sortConfig.direction === 'asc' ? 'desc' : 'asc'
+      });
+    } else {
+      // Sinon, on trie par défaut en ordre ascendant
+      setSortConfig({
+        key: key,
+        direction: 'asc'
+      });
+    }
+  };
+
+  /**
+   * Obtient l'icône de tri pour la colonne
+   * @param key - Clé de la colonne
+   * @returns Icône de tri appropriée
+   */
+  const getSortIcon = (key: string) => {
+    if (sortConfig.key !== key) {
+      return <ArrowUpDown className="h-4 w-4" />;
+    }
+    
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp className="h-4 w-4" /> 
+      : <ArrowDown className="h-4 w-4" />;
   };
 
   /**
@@ -235,8 +375,8 @@ export default function DeadlinesTable() {
             : bValue.localeCompare(aValue);
         } else {
           // Cas normal pour les propriétés directes
-          const aValue = sortConfig.key in a ? a[sortConfig.key as keyof Deadline] : null;
-          const bValue = sortConfig.key in b ? b[sortConfig.key as keyof Deadline] : null;
+          const aValue = a[sortConfig.key as keyof Deadline];
+          const bValue = b[sortConfig.key as keyof Deadline];
           
           if (typeof aValue === 'string' && typeof bValue === 'string') {
             return sortConfig.direction === 'asc'
@@ -354,103 +494,11 @@ export default function DeadlinesTable() {
               ) : (
                 sortedAndPaginatedData.data.map((deadline) => (
                   <tr key={deadline.id} className="hover:bg-slate-50">
-                    {/* Titre */}
-                    <td className="px-4 py-3 text-sm text-slate-900 max-w-xs truncate">
-                      {deadline.title}
-                    </td>
-                    
-                    {/* Statut */}
-                    <td className="px-4 py-3 text-sm">
-                      <Badge variant={getStatusBadgeVariant(deadline.status)}>
-                        {deadline.status}
-                      </Badge>
-                    </td>
-                    
-                    {/* Priorité */}
-                    <td className="px-4 py-3 text-sm">
-                      <Badge variant={getPriorityBadgeVariant(deadline.priority)}>
-                        {deadline.priority}
-                      </Badge>
-                    </td>
-                    
-                    {/* Date d'échéance */}
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
-                        <span className={
-                          new Date(deadline.deadlineDate) < new Date() &&
-                          deadline.status !== DeadlineStatus.COMPLETED &&
-                          deadline.status !== DeadlineStatus.CANCELLED
-                            ? "text-red-500 font-medium"
-                            : ""
-                        }>
-                          {formatDate(deadline.deadlineDate)}
-                        </span>
-                      </div>
-                    </td>
-                    
-                    {/* Visibilité */}
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      <Badge variant="outline">
-                        {deadline.visibility}
-                      </Badge>
-                    </td>
-                    
-                    {/* Projet */}
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      <div className="flex items-center">
-                        <Folder className="h-4 w-4 mr-1 flex-shrink-0" />
-                        <span>{deadline.project?.name || '-'}</span>
-                      </div>
-                    </td>
-                    
-                    {/* Créateur */}
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      <div className="flex items-center">
-                        <UserCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-                        <span>
-                          {deadline.creator 
-                            ? `${deadline.creator.firstName} ${deadline.creator.lastName}`
-                            : '-'
-                          }
-                        </span>
-                      </div>
-                    </td>
-                    
-                    {/* Actions */}
-                    <td className="px-4 py-3 text-sm text-right">
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/dashboard/deadlines/${deadline.id}`)}
-                          title="Voir les détails"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/dashboard/deadlines/${deadline.id}?edit=true`)}
-                          title="Modifier"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setDeleteId(deadline.id);
-                            setIsDeleteModalOpen(true);
-                          }}
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </td>
+                    {columns.map(column => (
+                      <td key={`${deadline.id}-${column.key}`} className="px-4 py-3 text-sm">
+                        {column.cell(deadline)}
+                      </td>
+                    ))}
                   </tr>
                 ))
               )}
