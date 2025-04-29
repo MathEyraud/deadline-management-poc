@@ -19,6 +19,7 @@ import { AiServiceModule } from './ai-service/ai-service.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { ResponseLoggingInterceptor } from './common/interceptors/response-logging.interceptor';
 
 /**
  * Module principal qui configure:
@@ -67,7 +68,10 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
     },
-    
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseLoggingInterceptor,
+    },
     // Garde global pour l'authentification JWT (toutes les routes protégées par défaut)
     // TODO : Commenté pour le POC - décommenter pour protéger toutes les routes par défaut
     /*

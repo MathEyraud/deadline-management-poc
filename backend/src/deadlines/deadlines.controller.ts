@@ -3,7 +3,7 @@
  * pour les opérations liées aux échéances.
  * @module DeadlinesController
  */
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { DeadlinesService } from './deadlines.service';
 import { CreateDeadlineDto } from './dto/create-deadline.dto';
 import { UpdateDeadlineDto } from './dto/update-deadline.dto';
@@ -47,23 +47,35 @@ export class DeadlinesController {
    * @param creatorId Filtre optionnel par ID de créateur
    * @returns Liste des échéances correspondant aux critères
    */
-  @Get()
-  @ApiOperation({ summary: 'Récupérer toutes les échéances' })
-  @ApiQuery({ name: 'status', enum: DeadlineStatus, required: false })
-  @ApiQuery({ name: 'priority', enum: DeadlinePriority, required: false })
-  @ApiQuery({ name: 'visibility', enum: DeadlineVisibility, required: false })
-  @ApiQuery({ name: 'projectId', type: String, required: false })
-  @ApiQuery({ name: 'creatorId', type: String, required: false })
-  @ApiResponse({ status: 200, description: 'Liste des échéances', type: [Deadline] })
-  findAll(
-    @Query('status') status?: DeadlineStatus,
-    @Query('priority') priority?: DeadlinePriority,
-    @Query('visibility') visibility?: DeadlineVisibility,
-    @Query('projectId') projectId?: string,
-    @Query('creatorId') creatorId?: string,
-  ) {
-    return this.deadlinesService.findAll({ status, priority, visibility, projectId, creatorId });
-  }
+    @Get()
+    @ApiOperation({ summary: 'Récupérer les échéances accessibles à l\'utilisateur' })
+    @ApiQuery({ name: 'status', enum: DeadlineStatus, required: false })
+    @ApiQuery({ name: 'priority', enum: DeadlinePriority, required: false })
+    @ApiQuery({ name: 'visibility', enum: DeadlineVisibility, required: false })
+    @ApiQuery({ name: 'projectId', type: String, required: false })
+    @ApiResponse({ status: 200, description: 'Liste des échéances accessibles', type: [Deadline] })
+    async findAll(
+      @Req() req,
+      @Query('status') status?: DeadlineStatus,
+      @Query('priority') priority?: DeadlinePriority,
+      @Query('visibility') visibility?: DeadlineVisibility,
+      @Query('projectId') projectId?: string,
+    ) {
+      // D'abord, récupérer les échéances accessibles
+      const accessibleDeadlines = await this.deadlinesService.getAccessibleDeadlines(req.user.id);
+      
+      // Ensuite, appliquer les filtres additionnels si nécessaire
+      return accessibleDeadlines.filter(deadline => {
+        let match = true;
+        
+        if (status && deadline.status !== status) match = false;
+        if (priority && deadline.priority !== priority) match = false;
+        if (visibility && deadline.visibility !== visibility) match = false;
+        if (projectId && deadline.projectId !== projectId) match = false;
+        
+        return match;
+      });
+    }
 
   /**
    * Récupère une échéance par son ID
@@ -75,7 +87,19 @@ export class DeadlinesController {
   @ApiParam({ name: 'id', description: 'ID de l\'échéance' })
   @ApiResponse({ status: 200, description: 'Échéance trouvée', type: Deadline })
   @ApiResponse({ status: 404, description: 'Échéance non trouvée' })
-  findOne(@Param('id') id: string) {
+  @ApiResponse({ status: 403, description: 'Accès refusé à cette échéance' })
+  async findOne(@Param('id') id: string, @Req() req) {
+    // Récupérer toutes les échéances accessibles
+    const accessibleDeadlines = await this.deadlinesService.getAccessibleDeadlines(req.user.id);
+    
+    // Vérifier si l'échéance demandée fait partie des échéances accessibles
+    const isAccessible = accessibleDeadlines.some(deadline => deadline.id === id);
+    
+    if (!isAccessible) {
+      throw new ForbiddenException(`Vous n'avez pas accès à cette échéance`);
+    }
+    
+    // Si l'échéance est accessible, récupérer ses détails complets
     return this.deadlinesService.findOne(id);
   }
 

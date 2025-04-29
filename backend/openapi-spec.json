@@ -337,19 +337,11 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "creatorId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Liste des échéances",
+            "description": "Liste des échéances accessibles",
             "content": {
               "application/json": {
                 "schema": {
@@ -367,7 +359,7 @@
             "bearer": []
           }
         ],
-        "summary": "Récupérer toutes les échéances",
+        "summary": "Récupérer les échéances accessibles à l'utilisateur",
         "tags": [
           "deadlines"
         ]
@@ -397,6 +389,9 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Accès refusé à cette échéance"
           },
           "404": {
             "description": "Échéance non trouvée"

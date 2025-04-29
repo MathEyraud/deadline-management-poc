@@ -6,7 +6,7 @@
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { Deadline, DeadlinePriority, DeadlineStatus, DeadlineVisibility } from './entities/deadline.entity';
 import { CreateDeadlineDto } from './dto/create-deadline.dto';
 import { UpdateDeadlineDto } from './dto/update-deadline.dto';
@@ -208,78 +208,59 @@ export class DeadlinesService {
    * @returns Promise contenant la liste des échéances accessibles
    */
   async getAccessibleDeadlines(userId: string): Promise<Deadline[]> {
-    // Récupération des informations complètes sur l'utilisateur
+    // Récupérer l'utilisateur avec ses informations
     const userRepository = this.deadlinesRepository.manager.getRepository(User);
     const user = await userRepository.findOne({
       where: { id: userId },
-      relations: ['deadlines'], // Relations directes si nécessaire
     });
-
+  
     if (!user) {
       throw new NotFoundException(`Utilisateur avec ID "${userId}" non trouvé`);
     }
-
-    // Si l'utilisateur est un administrateur, il a accès à toutes les échéances
+  
+    // Si l'utilisateur est un administrateur, accès total
     if (user.role === UserRole.ADMIN) {
       return this.deadlinesRepository.find({
         relations: ['creator', 'project', 'comments', 'attachments'],
       });
     }
-
-    // Création d'un query builder pour construire une requête optimisée
-    const queryBuilder = this.deadlinesRepository.createQueryBuilder('deadline')
+  
+    // Construction d'une requête optimisée pour récupérer les échéances accessibles
+    const query = this.deadlinesRepository.createQueryBuilder('deadline')
       .leftJoinAndSelect('deadline.creator', 'creator')
       .leftJoinAndSelect('deadline.project', 'project')
-      .leftJoinAndSelect('project.team', 'projectTeam')
-      .distinct(true);
-
-    // 1. Échéances créées par l'utilisateur
-    queryBuilder.orWhere('deadline.creatorId = :userId', { userId });
-
-    // 2. Échéances avec visibilité ORGANIZATION (accessibles à tous)
-    queryBuilder.orWhere('deadline.visibility = :orgVisibility', { 
-      orgVisibility: DeadlineVisibility.ORGANIZATION 
-    });
-
-    // 3. Échéances avec visibilité DEPARTMENT où l'utilisateur appartient au même département
-    queryBuilder.orWhere(
-      'deadline.visibility = :deptVisibility AND creator.department = :userDepartment',
-      {
-        deptVisibility: DeadlineVisibility.DEPARTMENT,
-        userDepartment: user.department,
-      }
-    );
-
-    // 4. Échéances avec visibilité TEAM où l'utilisateur est membre de l'équipe
-    // Sous-requête pour récupérer les équipes dont l'utilisateur est membre
-    const userTeamsQuery = this.deadlinesRepository.manager
-      .getRepository('team_members')
-      .createQueryBuilder('tm')
-      .where('tm.userId = :userId', { userId })
-      .select('tm.teamId');
-
-    // Sous-requête pour le leader d'équipe
-    const teamLeaderQuery = this.deadlinesRepository.manager
-      .getRepository('teams')
-      .createQueryBuilder('team')
-      .where('team.leaderId = :userId', { userId })
-      .select('team.id');
-
-    // Échéances d'équipe où l'utilisateur est membre ou leader
-    queryBuilder.orWhere(
-      `deadline.visibility = :teamVisibility AND (
-        projectTeam.id IN (${userTeamsQuery.getQuery()}) OR
-        projectTeam.leaderId = :userId
-      )`,
-      { teamVisibility: DeadlineVisibility.TEAM, userId }
-    );
-
-    // 5. Échéances des projets dont l'utilisateur est responsable
-    queryBuilder.orWhere('project.managerId = :userId', { userId });
-
-    // Exécution de la requête
-    const deadlines = await queryBuilder.getMany();
-
-    return deadlines;
+      .leftJoinAndSelect('project.team', 'team')
+      .where(new Brackets(qb => {
+        // Échéances créées par l'utilisateur
+        qb.where('deadline.creatorId = :userId', { userId });
+        
+        // Échéances visibles pour l'organisation entière
+        qb.orWhere('deadline.visibility = :orgVisibility', 
+                  { orgVisibility: DeadlineVisibility.ORGANIZATION });
+        
+        // Échéances visibles au niveau département où l'utilisateur appartient au même département
+        qb.orWhere('deadline.visibility = :deptVisibility AND creator.department = :userDepartment',
+                  { deptVisibility: DeadlineVisibility.DEPARTMENT, userDepartment: user.department });
+        
+        // Requête pour les équipes dont l'utilisateur est membre
+        const teamSubQuery = this.deadlinesRepository.manager
+          .getRepository('team_members')
+          .createQueryBuilder('tm')
+          .select('tm.teamId')
+          .where('tm.userId = :userId', { userId });
+        
+        // Échéances visibles au niveau équipe où l'utilisateur est membre ou chef d'équipe
+        qb.orWhere(`deadline.visibility = :teamVisibility AND 
+                    (team.id IN (${teamSubQuery.getQuery()}) OR team.leaderId = :userId)`,
+                  { teamVisibility: DeadlineVisibility.TEAM, userId });
+        
+        // Échéances des projets dont l'utilisateur est responsable
+        qb.orWhere('project.managerId = :userId', { userId });
+      }));
+  
+    // Paramètres pour la sous-requête des équipes
+    query.setParameter('userId', userId);
+    
+    return query.getMany();
   }
 }
