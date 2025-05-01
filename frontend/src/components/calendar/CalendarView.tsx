@@ -1,6 +1,6 @@
 /**
  * Composant CalendarView
- * Affiche les échéances dans un calendrier interactif
+ * Affiche les échéances dans un calendrier interactif avec mise en évidence de la plage sélectionnée
  * @module components/calendar/CalendarView
  */
 'use client';
@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { Deadline, DeadlinePriority } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle, Badge, Select, Modal } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Badge, Modal, Select } from '@/components/ui';
 import DeadlineForm from '../deadline/DeadlineForm';
 import { useDeadlinesList } from '@/hooks/useDeadlines';
 
@@ -52,7 +52,7 @@ const getPriorityBadgeVariant = (priority: string) => {
 };
 
 /**
- * Composant CalendarView - Calendrier interactif des échéances
+ * Composant CalendarView - Calendrier interactif des échéances avec mise en évidence de la plage sélectionnée
  * @param props - Propriétés du composant
  * @returns Composant CalendarView
  */
@@ -64,6 +64,8 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [calendarView, setCalendarView] = useState<'month' | 'year'>('month');
   const [dateRange, setDateRange] = useState<[Date, Date]>(getDateRangeForView('monthly', date));
+  // État pour suivre la plage active/sélectionnée pour la mise en évidence
+  const [selectedRange, setSelectedRange] = useState<[Date, Date]>(dateRange);
   
   // Fetch deadlines data
   const { data: deadlines = [], refetch } = useDeadlinesList();
@@ -137,10 +139,15 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
         break;
         
       case 'weekly':
-        // Vue hebdomadaire: dimanche à samedi
-        const dayOfWeek = baseDate.getDay();
-        startDate.setDate(baseDate.getDate() - dayOfWeek);
+        // Vue hebdomadaire: lundi à dimanche (calendrier ISO 8601)
+        const dayOfWeek = startDate.getDay() || 7; // getDay retourne 0 pour dimanche, mais en ISO 8601 c'est 7
+        const diff = dayOfWeek - 1; // Différence par rapport au lundi (1er jour)
+        
+        // Régler startDate au lundi de la semaine en cours
+        startDate.setDate(startDate.getDate() - diff);
         startDate.setHours(0, 0, 0, 0);
+        
+        // Régler endDate au dimanche (startDate + 6 jours)
         endDate.setDate(startDate.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
         break;
@@ -174,7 +181,9 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
 
   // Mettre à jour la plage de dates quand la vue change
   useEffect(() => {
-    setDateRange(getDateRangeForView(viewMode, date));
+    const newDateRange = getDateRangeForView(viewMode, date);
+    setDateRange(newDateRange);
+    setSelectedRange(newDateRange); // Mettre également à jour la plage sélectionnée
 
     // Mettre à jour calendarView en fonction de viewMode
     setCalendarView(getCalendarViewFromMode(viewMode));
@@ -183,7 +192,7 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
 
   // Filtrer les échéances pour la plage de dates sélectionnée
   const getDeadlinesForDateRange = () => {
-    const [startDate, endDate] = dateRange;
+    const [startDate, endDate] = selectedRange; // Utiliser la plage sélectionnée plutôt que dateRange
     
     return deadlines.filter(deadline => {
       const deadlineDate = new Date(deadline.deadlineDate);
@@ -244,12 +253,57 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
     { value: 'daily', label: 'Journalier' }
   ];
 
-  // Classe pour chaque tuile du calendrier
-  const tileClassName = ({ date, view }: { date: Date; view: string }) => {
+  /**
+   * Détermine si une date est dans la plage sélectionnée
+   * @param date - Date à vérifier
+   * @returns true si la date est dans la plage sélectionnée
+   */
+  const isDateInSelectedRange = (date: Date): boolean => {
+    const [start, end] = selectedRange;
+    const startTime = start.setHours(0, 0, 0, 0);
+    const endTime = end.setHours(23, 59, 59, 999);
+    const dateTime = new Date(date).setHours(12, 0, 0, 0); // Midi pour éviter les problèmes de fuseau horaire
+    
+    return dateTime >= startTime && dateTime <= endTime;
+  };
+
+  /**
+   * Classe pour chaque tuile du calendrier, avec mise en évidence de la plage sélectionnée
+   * @param date - Date de la tuile
+   * @param view - Type de vue (month/year)
+   * @returns Classes CSS pour la tuile
+   */
+  const tileClassName = ({ date, view }: { date: Date; view: string }): string => {
+    const classes = [];
+    
+    // Ajouter une classe si la tuile a des échéances
     if (tileHasDeadline({ date, view })) {
-      return 'has-deadlines';
+      classes.push('has-deadlines');
     }
-    return null;
+    
+    // Ajouter une classe si la date est dans la plage sélectionnée
+    if (isDateInSelectedRange(date)) {
+      classes.push('in-selected-range');
+      
+      // Ajouter des classes spécifiques pour le début et la fin de la plage
+      const [start, end] = selectedRange;
+      
+      // Vérifier si c'est le début de la plage (même jour)
+      if (date.getDate() === start.getDate() && 
+          date.getMonth() === start.getMonth() && 
+          date.getFullYear() === start.getFullYear()) {
+        classes.push('range-start');
+      }
+      
+      // Vérifier si c'est la fin de la plage (même jour)
+      if (date.getDate() === end.getDate() && 
+          date.getMonth() === end.getMonth() && 
+          date.getFullYear() === end.getFullYear()) {
+        classes.push('range-end');
+      }
+    }
+    
+    return classes.join(' ');
   };
 
   // Navigation dans le calendrier
@@ -286,18 +340,40 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
     setDate(newDate);
   };
 
-  // Gestionnaire de changement de date correctement typé
+  // Gestionnaire de changement de date spécifiquement amélioré pour la mise en évidence
   const handleDateChange = (value: Value) => {
+    // Cas d'une date unique sélectionnée
     if (value instanceof Date) {
       setDate(value);
-    } else if (Array.isArray(value) && value.length > 0 && value[0] instanceof Date) {
+      
+      // Si on est en vue quotidienne, mettre à jour la plage sélectionnée
+      if (viewMode === 'daily') {
+        const newRange: [Date, Date] = [
+          new Date(value.setHours(0, 0, 0, 0)),
+          new Date(new Date(value).setHours(23, 59, 59, 999))
+        ];
+        setSelectedRange(newRange);
+      }
+    } 
+    // Cas d'une plage (utilisé pour les vues comme "week" ou "month" dans certaines configurations de react-calendar)
+    else if (Array.isArray(value) && value.length > 0 && value[0] instanceof Date) {
       setDate(value[0]);
+      
+      if (value.length === 2 && value[1] instanceof Date) {
+        // Mise à jour de la plage sélectionnée avec les heures correctement définies
+        const newRange: [Date, Date] = [
+          new Date(new Date(value[0]).setHours(0, 0, 0, 0)),
+          new Date(new Date(value[1]).setHours(23, 59, 59, 999))
+        ];
+        setSelectedRange(newRange);
+      }
     }
   };
 
   // Formatter le titre de la période affichée
   const formatDateRangeTitle = () => {
-    const [start, end] = dateRange;
+    // Utiliser la plage sélectionnée plutôt que dateRange
+    const [start, end] = selectedRange;
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     
     switch (viewMode) {
@@ -368,6 +444,15 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
               </div>
             </div>
           </div>
+          
+          {/* Indicateur de plage de temps sélectionnée */}
+          <div className="mt-2 text-sm text-slate-500 flex items-center">
+            <span className="inline-block w-3 h-3 bg-blue-100 border border-blue-300 rounded-sm mr-2"></span>
+            <span>Plage de temps sélectionnée: </span>
+            <span className="font-medium ml-1">
+              {selectedRange[0].toLocaleDateString('fr-FR')} - {selectedRange[1].toLocaleDateString('fr-FR')}
+            </span>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="calendar-container mb-4">
@@ -378,8 +463,18 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
               tileClassName={tileClassName}
               calendarType="iso8601"
               view={calendarView}
+              selectRange={viewMode !== 'daily'}
               onClickDay={(value) => {
+                // Si nous sommes en vue journalière ou si nous cliquons sur une date spécifique
                 setDate(value);
+                
+                // En vue journalière, définir une plage d'un seul jour
+                const newRange: [Date, Date] = [
+                  new Date(new Date(value).setHours(0, 0, 0, 0)),
+                  new Date(new Date(value).setHours(23, 59, 59, 999))
+                ];
+                setSelectedRange(newRange);
+                
                 // Si nous ne sommes pas déjà en vue journalière, passer en vue journalière
                 if (viewMode !== 'daily') {
                   setViewMode('daily');
@@ -399,13 +494,18 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
                 border: none;
                 font-family: inherit;
               }
+              
+              /* Style de base pour les tuiles actives */
               .react-calendar__tile--active {
                 background-color: #3b82f6 !important;
                 color: white;
               }
+              
+              /* Style pour les tuiles avec des échéances */
               .react-calendar__tile.has-deadlines {
                 position: relative;
               }
+              
               .react-calendar__tile.has-deadlines::after {
                 content: '';
                 position: absolute;
@@ -417,9 +517,40 @@ export const CalendarView = ({ className = '' }: CalendarViewProps) => {
                 border-radius: 50%;
                 background-color: #3b82f6;
               }
+              
               .react-calendar__year-view .react-calendar__tile.has-deadlines::after {
                 width: 8px;
                 height: 8px;
+              }
+              
+              /* Style pour les tuiles dans la plage sélectionnée */
+              .react-calendar__tile.in-selected-range {
+                background-color: #dbeafe !important;
+                color: #1e40af;
+                position: relative;
+                z-index: 1;
+              }
+              
+              /* Style spécifique pour le début de la plage */
+              .react-calendar__tile.range-start {
+                background-color: #bfdbfe !important;
+                border-top-left-radius: 4px;
+                border-bottom-left-radius: 4px;
+                font-weight: 600;
+              }
+              
+              /* Style spécifique pour la fin de la plage */
+              .react-calendar__tile.range-end {
+                background-color: #bfdbfe !important;
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+                font-weight: 600;
+              }
+              
+              /* Style pour la date active et dans la plage */
+              .react-calendar__tile--active.in-selected-range {
+                color: white !important;
+                font-weight: 600;
               }
             `}</style>
           </div>
