@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { CardContent } from '@/components/ui';
@@ -43,6 +43,32 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   onClickDay,
   onClickMonth
 }) => {
+  // Référence vers le composant Calendar
+  const calendarRef = useRef<any>(null);
+  
+  // Forcer une mise à jour du calendrier lorsque value change
+  useEffect(() => {
+    // Si le calendrier a une méthode pour recharger ou naviguer vers une date spécifique
+    if (calendarRef.current) {
+      // Forcer un re-render du composant Calendar
+      const forceUpdate = () => {
+        const calendarInstance = calendarRef.current;
+        if (calendarInstance && calendarInstance.setState) {
+          // Tenter de mettre à jour l'état interne du composant Calendar
+          // Nous utilisons activeStartDate qui est une prop que react-calendar utilise pour déterminer
+          // quel mois/année afficher
+          calendarInstance.setState({
+            activeStartDate: value,
+            value: value
+          });
+        }
+      };
+      
+      // Exécuter avec un léger délai pour s'assurer que l'état interne est prêt
+      setTimeout(forceUpdate, 0);
+    }
+  }, [value, view, viewMode]);
+
   /**
    * Classe pour chaque tuile du calendrier, avec mise en évidence de la plage sélectionnée
    * @param date - Date de la tuile
@@ -82,10 +108,29 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
     return classes.join(' ');
   };
 
+  // Déterminer la date active de départ (généralement le premier jour du mois affiché)
+  // Cette prop est importante pour react-calendar car elle influence quel mois est affiché
+  const getActiveStartDate = () => {
+    // Pour les vues mois, on veut que le mois de la date sélectionnée soit affiché
+    if (view === 'month') {
+      const startDate = new Date(value);
+      startDate.setDate(1); // Premier jour du mois
+      return startDate;
+    }
+    // Pour les vues année, on veut que l'année soit affichée
+    return value;
+  };
+
+  // Forcer l'utilisation de la clé active pour recréer le composant Calendar
+  // à chaque fois que le mois/année change pour éviter les problèmes d'état interne
+  const activeKey = `${view}-${value.getFullYear()}-${value.getMonth()}`;
+
   return (
     <CardContent>
       <div className="calendar-container mb-4">
         <Calendar
+          ref={calendarRef}
+          key={activeKey} // Ceci force la recréation du composant quand la date change
           onChange={onChange}
           value={value}
           locale="fr-FR"
@@ -95,8 +140,13 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
           selectRange={viewMode !== 'daily'}
           onClickDay={onClickDay}
           onClickMonth={onClickMonth}
+          activeStartDate={getActiveStartDate()} // Important pour déterminer quel mois/année est affiché
+          showNeighboringMonth={true}
+          next2Label={null} // Désactivation des boutons de navigation éloignée
+          prev2Label={null} // pour éviter des conflits avec notre propre navigation
         />
         <style jsx global>{`
+          /* Styles existants */
           .react-calendar {
             width: 100%;
             border: none;

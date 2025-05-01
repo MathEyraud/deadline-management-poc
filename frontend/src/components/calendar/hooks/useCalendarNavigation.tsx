@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CalendarViewMode, CalendarDateRange, CalendarDisplayView } from '../types/calendar.types';
 import { getDateRangeForView, getCalendarViewFromMode } from '../utils/calendarUtils';
 
@@ -63,7 +63,8 @@ export function useCalendarNavigation(
    * Navigation dans le calendrier
    * @param action - Direction de navigation ('prev' ou 'next')
    */
-  const navigate = (action: 'prev' | 'next') => {
+  const navigate = useCallback((action: 'prev' | 'next') => {
+    // Créer une nouvelle date basée sur la date actuelle
     const newDate = new Date(currentDate);
     
     switch (viewMode) {
@@ -83,7 +84,7 @@ export function useCalendarNavigation(
         newDate.setMonth(newDate.getMonth() + (action === 'next' ? 1 : -1));
         break;
       case 'biweekly':
-        newDate.setDate(newDate.getDate() + (action === 'next' ? 15 : -15));
+        newDate.setDate(newDate.getDate() + (action === 'next' ? 14 : -14));
         break;
       case 'weekly':
         newDate.setDate(newDate.getDate() + (action === 'next' ? 7 : -7));
@@ -93,14 +94,15 @@ export function useCalendarNavigation(
         break;
     }
     
+    // Mettre à jour la date courante (cela déclenchera également la mise à jour des plages via useEffect)
     setCurrentDate(newDate);
-  };
+  }, [currentDate, viewMode]);
 
   /**
-   * Gestionnaire de changement de date
+   * Gestionnaire de changement de date amélioré
    * @param value - Nouvelle valeur de date
    */
-  const handleDateChange = (value: Date | null | [Date | null, Date | null]) => {
+  const handleDateChange = useCallback((value: Date | null | [Date | null, Date | null]) => {
     // Cas d'une date unique sélectionnée
     if (value instanceof Date) {
       setCurrentDate(value);
@@ -131,7 +133,7 @@ export function useCalendarNavigation(
         setSelectedRange({ startDate, endDate });
       }
     }
-  };
+  }, [viewMode]);
 
   return {
     currentDate,
