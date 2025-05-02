@@ -12,13 +12,11 @@ import {
   UserCircle, 
   LogOut, 
   Settings, 
-  ChevronDown,
-  CalendarIcon,
-  ListTodoIcon,
-  LayoutDashboardIcon
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
+import { GlobalSearch } from '@/components/search';
 
 /**
  * Props du composant Navbar
@@ -48,36 +46,16 @@ export const Navbar = ({ isSidebarCollapsed }: NavbarProps) => {
             <Link href="/dashboard" className="flex items-center">
               <span className="text-slate-900 font-bold text-xl">DeadlineManager</span>
             </Link>
-            
-            {/* Navigation principale (visible sur grands écrans) */}
-            <nav className="hidden md:ml-8 md:flex md:space-x-4">
-              <Link 
-                href="/dashboard" 
-                className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-700 hover:bg-slate-100"
-              >
-                <LayoutDashboardIcon className="h-4 w-4 mr-2" />
-                Tableau de bord
-              </Link>
-              <Link 
-                href="/dashboard/deadlines" 
-                className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-700 hover:bg-slate-100"
-              >
-                <ListTodoIcon className="h-4 w-4 mr-2" />
-                Échéances
-              </Link>
-              <Link 
-                href="/dashboard/calendar" 
-                className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-700 hover:bg-slate-100"
-              >
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                Calendrier
-              </Link>
-            </nav>
           </div>
           
-          {/* Section droite - Actions utilisateur */}
+          {/* Section droite - Actions utilisateur avec recherche */}
           <div className="flex items-center space-x-4">
-            {/* Notification (visible sur tous les écrans) */}
+            {/* Recherche globale */}
+            <div className="w-64 hidden md:block">
+              <GlobalSearch />
+            </div>
+            
+            {/* Notification */}
             <Button
               variant="ghost"
               size="icon"
@@ -139,6 +117,11 @@ export const Navbar = ({ isSidebarCollapsed }: NavbarProps) => {
               )}
             </div>
           </div>
+        </div>
+        
+        {/* Barre de recherche mobile (visible uniquement sur petit écran) */}
+        <div className="block md:hidden pb-2">
+          <GlobalSearch />
         </div>
       </div>
     </header>

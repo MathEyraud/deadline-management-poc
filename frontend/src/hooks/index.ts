@@ -4,29 +4,38 @@
  * @module hooks
  */
 
-// Exportation des hooks d'authentification
+// Hooks d'authentification
 export * from './useAuth';
 
-// Exportation des hooks pour les échéances
+// Hooks pour les échéances
 export * from './useDeadlines';
 
-// Exportation des hooks pour les projets
+// Hooks pour les projets
 export * from './useProjects';
 
-// Exportation des hooks pour les équipes
+// Hooks pour les équipes
 export * from './useTeams';
 
-// Exportation des hooks pour les utilisateurs
+// Hooks pour les utilisateurs
 export * from './useUsers';
 
-// Exportation des hooks pour les commentaires
+// Hooks pour les commentaires
 export * from './useComments';
 
-// Exportation des hooks pour les pièces jointes
+// Hooks pour les pièces jointes
 export * from './useAttachments';
 
-// Exportation des hooks pour le chat IA
+// Hooks pour le chat IA
 export * from './useChat';
 
+// Hook pour la recherche hybride (frontend et backend)
+export * from './useHybridSearch';
+
+// Hook pour détecter les clics en dehors d'un élément
+export * from './useClickAway';
+
+// Hook pour gérer les raccourcis clavier
+export * from './useHotkeys';
+
 // Exemple d'utilisation:
-// import { useAuth, useDeadlines, useChat } from '@/hooks';
+// import { useAuth, useDeadlines, useChat, useHybridSearch } from '@/hooks';
