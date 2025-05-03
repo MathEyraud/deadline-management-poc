@@ -37,5 +37,8 @@ export * from './useClickAway';
 // Hook pour gérer les raccourcis clavier
 export * from './useHotkeys';
 
+// Hook pour gérer les états de chargement
+export * from './useLoading';
+
 // Exemple d'utilisation:
-// import { useAuth, useDeadlines, useChat, useHybridSearch } from '@/hooks';
+// import { useAuth, useDeadlines, useChat, useHybridSearch, useLoading } from '@/hooks';

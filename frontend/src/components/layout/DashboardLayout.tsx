@@ -8,6 +8,7 @@ import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import PageLoader from './PageLoader';
 
 /**
  * Props pour le composant DashboardLayout
@@ -71,6 +72,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="flex min-h-screen bg-slate-50">
+      {/* Loader de page pour les transitions */}
+      <PageLoader mode="topbar" variant="logo" />
+      
       {/* Sidebar */}
       <Sidebar 
         isCollapsed={sidebarCollapsed}

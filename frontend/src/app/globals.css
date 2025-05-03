@@ -70,3 +70,23 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Animation pour la barre de chargement des pages */
+@keyframes loadingBar {
+  0% {
+    width: 0%;
+    left: 0;
+  }
+  50% {
+    width: 30%;
+    left: 30%;
+  }
+  100% {
+    width: 100%;
+    left: 0;
+  }
+}
+
+.animate-loading-bar {
+  animation: loadingBar 1.5s ease-in-out infinite;
+}

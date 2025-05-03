@@ -8,6 +8,7 @@ export * from './ConfirmDialog';
 export * from './DatePicker';
 export * from './DropdownMenu';
 export * from './Input';
+export * from './Loader';
 export * from './Modal';
 export * from './MultiSelect';
 export * from './Pagination';
