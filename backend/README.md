@@ -1,10 +1,10 @@
 # Backend de l'Application de Gestion d'Échéances
 
-Backend API RESTful pour l'application de gestion d'échéances du secteur défense, développé avec Nest.js et TypeScript.
+Backend API RESTful pour l'application de gestion d'échéances, développé avec Nest.js et TypeScript.
 
 ## Description
 
-Ce projet fournit une API backend complète pour gérer des échéances, projets, équipes et utilisateurs dans un environnement sécurisé. Conçue spécifiquement pour répondre aux besoins du secteur défense, l'application inclut des fonctionnalités de sécurité avancées et une intégration avec un service d'intelligence artificielle.
+Ce projet fournit une API backend complète pour gérer des échéances, projets, équipes et utilisateurs dans un environnement sécurisé. L'application inclut des fonctionnalités de sécurité avancées et une intégration avec un service d'intelligence artificielle.
 
 ## Fonctionnalités principales
 
@@ -176,16 +176,6 @@ Pour un déploiement en production, il est recommandé de :
 
 ## Équipe de développement
 
-Ce projet a été développé dans le cadre d'un POC pour une application de gestion d'échéances du secteur défense.
-
-## Licence
-
-[Spécifier la licence]
-
-## Contact
-
-Pour toute question concernant ce projet, contactez [votre-contact@exemple.com].
+Ce projet a été développé dans le cadre d'un POC pour une application de gestion d'échéances.
 
 ---
-
-Développé avec [Nest](https://github.com/nestjs/nest).
