@@ -150,13 +150,4 @@ Les contributions sont les bienvenues ! Veuillez suivre ces étapes :
 ## 📄 Licence
 
 Ce projet est sous licence [MIT](LICENSE).
-
-## 🙏 Remerciements
-
-- Équipe de développement du projet
-- Contributeurs open source des bibliothèques utilisées
-- Tous les participants aux tests utilisateurs
-
 ---
-
-Développé par l'équipe d'experts frontend - 2025
